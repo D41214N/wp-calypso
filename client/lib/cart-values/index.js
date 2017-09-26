@@ -144,6 +144,8 @@ function isPaymentMethodEnabled( cart, method ) {
 			return isCreditCardPaymentsEnabled( cart );
 		case 'paypal':
 			return isPayPalExpressEnabled( cart );
+		case 'ebanx':
+			return isEbanxPaymentsEnabled( cart );
 		default:
 			return false;
 	}
@@ -160,6 +162,11 @@ function isPayPalExpressEnabled( cart ) {
 	);
 }
 
+function isEbanxPaymentsEnabled( cart ) {
+	return config.isEnabled( 'upgrades/ebanx' ) &&
+		0 <= cart.allowed_payment_methods.indexOf( 'WPCOM_Billing_Ebanx' );
+}
+
 export default {
 	applyCoupon,
 	canRemoveFromCart,
@@ -173,5 +180,6 @@ export default {
 	isPaidForFullyInCredits,
 	isPaymentMethodEnabled,
 	isPayPalExpressEnabled,
-	isCreditCardPaymentsEnabled,
+	isEbanxPaymentsEnabled,
+	isCreditCardPaymentsEnabled
 };

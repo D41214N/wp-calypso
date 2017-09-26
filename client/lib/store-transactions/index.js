@@ -74,6 +74,7 @@ TransactionFlow.prototype._read = function() {
 
 	paymentMethod = this._initialData.payment.paymentMethod;
 	paymentHandler = this._paymentHandlers[ paymentMethod ];
+
 	if ( ! paymentHandler ) {
 		throw new Error( 'Invalid payment method: ' + paymentMethod );
 	}
@@ -126,46 +127,59 @@ TransactionFlow.prototype._paymentHandlers = {
 		this._pushStep( { name: INPUT_VALIDATION, first: true } );
 		debug( 'submitting transaction with new card' );
 
-		this._createPaygateToken(
-			function( paygateToken ) {
-				const { name, country, 'postal-code': zip } = newCardDetails;
+		this._createCCToken( function( providerData ) {
+			// TODO: we're using the same function for ebanx and paygate,
+			// but this needs organizing a bit since it's routed by payment method name
+			const { name, country, 'postal-code': zip } = newCardDetails;
 
-				this._submitWithPayment( {
-					payment_method: 'WPCOM_Billing_MoneyPress_Paygate',
-					payment_key: paygateToken,
-					name,
-					zip,
-					country,
-				} );
-			}.bind( this )
-		);
+			switch ( country ) {
+				case 'BR':
+					this._submitWithPayment( {
+						payment_method: 'WPCOM_Billing_Ebanx',
+						payment_key: providerData.token,
+						masked_card_number: providerData.masked_card_number,
+						card_type: providerData.payment_type_code,
+						expiration: newCardDetails[ 'expiration-date' ],
+						postal_code: newCardDetails[ 'postal-code' ],
+						name,
+						country,
+					} );
+					break;
+				default:
+					this._submitWithPayment( {
+						payment_method: 'WPCOM_Billing_MoneyPress_Paygate',
+						payment_key: providerData.token,
+						name,
+						zip,
+						country
+					} );
+					break;
+			}
+
+		}.bind( this ) );
 	},
 
 	WPCOM_Billing_WPCOM: function() {
-		this._pushStep( { name: INPUT_VALIDATION, first: true } );
+		this._pushStep( { name: transactionStepTypes.INPUT_VALIDATION, first: true } );
 		this._submitWithPayment( { payment_method: 'WPCOM_Billing_WPCOM' } );
 	},
 };
 
-TransactionFlow.prototype._createPaygateToken = function( callback ) {
-	this._pushStep( { name: SUBMITTING_PAYMENT_KEY_REQUEST } );
+TransactionFlow.prototype._createCCToken = function( callback ) {
+	this._pushStep( { name: transactionStepTypes.SUBMITTING_PAYMENT_KEY_REQUEST } );
 
-	createPaygateToken(
-		'new_purchase',
-		this._initialData.payment.newCardDetails,
-		function( error, paygateToken ) {
-			if ( error ) {
-				return this._pushStep( {
-					name: RECEIVED_PAYMENT_KEY_RESPONSE,
-					error: error,
-					last: true,
-				} );
-			}
+	createCCToken( 'new_purchase', this._initialData.payment.newCardDetails, function( error, ccTokenResult ) {
+		if ( error ) {
+			return this._pushStep( {
+				name: transactionStepTypes.RECEIVED_PAYMENT_KEY_RESPONSE,
+				error: error,
+				last: true
+			} );
+		}
 
-			this._pushStep( { name: RECEIVED_PAYMENT_KEY_RESPONSE } );
-			callback( paygateToken );
-		}.bind( this )
-	);
+		this._pushStep( { name: transactionStepTypes.RECEIVED_PAYMENT_KEY_RESPONSE } );
+		callback( ccTokenResult );
+	}.bind( this ) );
 };
 
 TransactionFlow.prototype._submitWithPayment = function( payment ) {
@@ -235,11 +249,54 @@ function createPaygateToken( requestType, cardDetails, callback ) {
 			return callback( new Error( 'Paygate Response Error: ' + data.error_msg ) );
 		}
 
-		callback( null, data.token );
+		callback( null, data );
 	}
 
 	function onFailure() {
 		callback( new Error( 'Paygate Request Error' ) );
+	}
+}
+
+function createEbanxToken( requestType, cardDetails, callback ) {
+	wpcom.ebanxConfiguration( {
+		request_type: requestType,
+	}, function( configError, configuration ) {
+		if ( configError ) {
+			callback( configError );
+			return;
+		}
+
+		paygateLoader.ready( configuration.js_url, function( error, EBANX ) {
+			if ( error ) {
+				callback( error );
+				return;
+			}
+
+			EBANX.config.setMode( configuration.environment );
+			EBANX.config.setPublishableKey( configuration.public_key );
+			EBANX.config.setCountry( 'br' ); // TODO: more countries, pass from config?
+
+			const parameters = getEbanxParameters( cardDetails );
+			EBANX.card.createToken( parameters, createTokenCallback );
+		} );
+	} );
+
+	function createTokenCallback( ebanxResponse ) {
+		if ( ebanxResponse.data.hasOwnProperty( 'status' ) ) {
+			callback( null, ebanxResponse.data );
+		} else {
+			const errorMessage = ebanxResponse.error.err.status_message || ebanxResponse.error.err.message;
+			callback( new Error( 'Ebanx Request Error: ' + errorMessage ) );
+		}
+	}
+}
+
+function createCCToken( requestType, cardDetails, callback ) {
+	switch ( cardDetails.country ) {
+		case 'BR':
+			return createEbanxToken( requestType, cardDetails, callback );
+		default:
+			return createPaygateToken( requestType, cardDetails, callback );
 	}
 }
 
@@ -252,6 +309,15 @@ function getPaygateParameters( cardDetails ) {
 		country: cardDetails.country,
 		exp_month: cardDetails[ 'expiration-date' ].substring( 0, 2 ),
 		exp_year: '20' + cardDetails[ 'expiration-date' ].substring( 3, 5 ),
+	};
+}
+
+function getEbanxParameters( cardDetails ) {
+	return {
+		card_name: cardDetails.name,
+		card_number: cardDetails.number,
+		card_cvv: cardDetails.cvv,
+		card_due_date: cardDetails[ 'expiration-date' ].substring( 0, 2 ) + '/20' + cardDetails[ 'expiration-date' ].substring( 3, 5 )
 	};
 }
 
@@ -278,7 +344,7 @@ function fullCreditsPayment() {
 }
 
 export default {
-	createPaygateToken,
+	createCCToken,
 	fullCreditsPayment,
 	hasDomainDetails,
 	newCardPayment,

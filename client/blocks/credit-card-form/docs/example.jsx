@@ -22,7 +22,7 @@ const CreditCardFormExample = () => {
 
 	return (
 		<CreditCardForm
-			createPaygateToken={ createPaygateToken }
+			createCCToken={ createPaygateToken }
 			initialValues={ initialValues }
 			recordFormSubmitEvent={ noop }
 			saveStoredCard={ saveStoredCard }

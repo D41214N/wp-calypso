@@ -34,7 +34,7 @@ const CreditCardForm = createReactClass( {
 
 	propTypes: {
 		apiParams: PropTypes.object,
-		createPaygateToken: PropTypes.func.isRequired,
+		createCCToken: PropTypes.func.isRequired,
 		initialValues: PropTypes.object,
 		recordFormSubmitEvent: PropTypes.func.isRequired,
 		saveStoredCard: PropTypes.func,
@@ -146,14 +146,14 @@ const CreditCardForm = createReactClass( {
 	saveCreditCard() {
 		const cardDetails = this.getCardDetails();
 
-		this.props.createPaygateToken( cardDetails, ( paygateError, paygateToken ) => {
+		this.props.createCCToken( cardDetails, ( providerError, providerData ) => {
 			if ( ! this._mounted ) {
 				return;
 			}
 
-			if ( paygateError ) {
+			if ( providerError ) {
 				this.setState( { formSubmitting: false } );
-				notices.error( paygateError.message );
+				notices.error( providerError.message );
 				return;
 			}
 
@@ -178,8 +178,21 @@ const CreditCardForm = createReactClass( {
 							notices.error( message );
 						}
 					} );
+
+					this.props.successCallback();
+				} ).catch( ( { message } ) => {
+					if ( this._mounted ) {
+						this.setState( { formSubmitting: false } );
+					}
+
+					if ( typeof message === 'object' ) {
+						notices.error( <ValidationErrorList messages={ values( message ) } /> );
+					} else {
+						notices.error( message );
+					}
+				} );
 			} else {
-				const apiParams = this.getParamsForApi( cardDetails, paygateToken, this.props.apiParams );
+				const apiParams = this.getParamsForApi( cardDetails, providerData.token, this.props.apiParams );
 
 				wpcom.updateCreditCard( apiParams, ( apiError, response ) => {
 					if ( apiError ) {
@@ -208,7 +221,7 @@ const CreditCardForm = createReactClass( {
 		} );
 	},
 
-	getParamsForApi( cardDetails, paygateToken, extraParams = {} ) {
+	getParamsForApi( cardDetails, ccToken, extraParams = {} ) {
 		return {
 			...extraParams,
 			country: cardDetails.country,
@@ -216,7 +229,7 @@ const CreditCardForm = createReactClass( {
 			month: cardDetails[ 'expiration-date' ].split( '/' )[ 0 ],
 			year: cardDetails[ 'expiration-date' ].split( '/' )[ 1 ],
 			name: cardDetails.name,
-			paygateToken,
+			paygateToken: ccToken
 		};
 	},
 
