@@ -17,6 +17,7 @@ import {
 	receiveDisconnect,
 	receiveInit,
 	receiveMessage,
+	receiveUnauthorized,
 	requestChatTranscript,
 	setConnecting,
 	receiveReconnecting,
@@ -53,6 +54,7 @@ class Connection {
 				} )
 				.on( 'unauthorized', () => {
 					socket.close();
+					dispatch( receiveUnauthorized( 'User is not authorized' ) );
 					reject( 'User is not authorized' );
 				} )
 				.on( 'disconnect', reason => dispatch( receiveDisconnect( reason ) ) )

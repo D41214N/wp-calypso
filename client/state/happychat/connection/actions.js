@@ -5,13 +5,14 @@
  */
 import {
 	HAPPYCHAT_CONNECT,
-	HAPPYCHAT_IO_RECEIVE_INIT,
 	HAPPYCHAT_CONNECTING,
 	HAPPYCHAT_INITIALIZE,
 	HAPPYCHAT_IO_RECEIVE_ACCEPT,
 	HAPPYCHAT_IO_RECEIVE_DISCONNECT,
+	HAPPYCHAT_IO_RECEIVE_INIT,
 	HAPPYCHAT_IO_RECEIVE_MESSAGE,
 	HAPPYCHAT_IO_RECEIVE_RECONNECTING,
+	HAPPYCHAT_IO_RECEIVE_UNAUTHORIZED,
 	HAPPYCHAT_SEND_MESSAGE,
 	HAPPYCHAT_SEND_USER_INFO,
 	HAPPYCHAT_TRANSCRIPT_RECEIVE,
@@ -23,6 +24,11 @@ export const connectChat = () => ( { type: HAPPYCHAT_CONNECT } );
 export const initialize = () => ( { type: HAPPYCHAT_INITIALIZE } );
 
 export const receiveInit = user => ( { type: HAPPYCHAT_IO_RECEIVE_INIT, user } );
+
+export const receiveUnauthorized = errorStatus => ( {
+	type: HAPPYCHAT_IO_RECEIVE_UNAUTHORIZED,
+	errorStatus,
+} );
 
 export const setConnecting = () => ( { type: HAPPYCHAT_CONNECTING } );
 
