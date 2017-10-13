@@ -36,6 +36,7 @@ import {
 	PURCHASE_REMOVE_COMPLETED,
 	SITE_SETTINGS_SAVE_SUCCESS,
 } from 'state/action-types';
+import buildConnection from 'lib/happychat/connection';
 import { sendEvent, sendLog, sendPreferences } from './connection/actions';
 import { getGroups } from './selectors';
 import isHappychatChatAssigned from 'state/happychat/selectors/is-happychat-chat-assigned';
@@ -146,7 +147,7 @@ export default function( connection = null ) {
 	// Allow a connection object to be specified for
 	// testing. If blank, use a real connection.
 	if ( connection == null ) {
-		connection = require( './common' ).connection;
+		connection = buildConnection();
 	}
 
 	return store => next => action => {
