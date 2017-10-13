@@ -9,11 +9,11 @@ import {
 	HAPPYCHAT_CONNECTING,
 	HAPPYCHAT_DISCONNECTED,
 	HAPPYCHAT_INITIALIZE,
+	HAPPYCHAT_IO_RECEIVE_ACCEPT,
 	HAPPYCHAT_IO_RECEIVE_MESSAGE,
 	HAPPYCHAT_RECONNECTING,
 	HAPPYCHAT_SEND_MESSAGE,
 	HAPPYCHAT_SEND_USER_INFO,
-	HAPPYCHAT_SET_AVAILABLE,
 	HAPPYCHAT_TRANSCRIPT_RECEIVE,
 	HAPPYCHAT_TRANSCRIPT_REQUEST,
 } from 'state/action-types';
@@ -30,8 +30,8 @@ export const setDisconnected = errorStatus => ( { type: HAPPYCHAT_DISCONNECTED, 
 
 export const setReconnecting = () => ( { type: HAPPYCHAT_RECONNECTING } );
 
-export const setHappychatAvailable = isAvailable => ( {
-	type: HAPPYCHAT_SET_AVAILABLE,
+export const receiveAccept = isAvailable => ( {
+	type: HAPPYCHAT_IO_RECEIVE_ACCEPT,
 	isAvailable,
 } );
 

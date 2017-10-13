@@ -13,12 +13,12 @@ import { isString } from 'lodash';
  */
 import { HAPPYCHAT_MESSAGE_TYPES } from 'state/happychat/constants';
 import {
+	receiveAccept,
 	receiveMessage,
 	requestChatTranscript,
 	setConnected,
 	setConnecting,
 	setDisconnected,
-	setHappychatAvailable,
 	setReconnecting,
 } from 'state/happychat/connection/actions';
 import { setHappychatChatStatus } from 'state/happychat/chat/actions';
@@ -58,7 +58,7 @@ class Connection {
 				.on( 'disconnect', reason => dispatch( setDisconnected( reason ) ) )
 				.on( 'reconnecting', () => dispatch( setReconnecting() ) )
 				.on( 'status', status => dispatch( setHappychatChatStatus( status ) ) )
-				.on( 'accept', accept => dispatch( setHappychatAvailable( accept ) ) )
+				.on( 'accept', accept => dispatch( receiveAccept( accept ) ) )
 				.on( 'message', message => dispatch( receiveMessage( message ) ) );
 		} );
 

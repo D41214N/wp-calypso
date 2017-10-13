@@ -3,10 +3,10 @@
  * Internal dependencies
  */
 import {
-	HAPPYCHAT_SET_AVAILABLE,
 	HAPPYCHAT_CONNECTING,
 	HAPPYCHAT_CONNECTED,
 	HAPPYCHAT_DISCONNECTED,
+	HAPPYCHAT_IO_RECEIVE_ACCEPT,
 	HAPPYCHAT_RECONNECTING,
 } from 'state/action-types';
 import {
@@ -59,7 +59,7 @@ const status = ( state = HAPPYCHAT_CONNECTION_STATUS_UNINITIALIZED, action ) => 
  */
 const isAvailable = ( state = false, action ) => {
 	switch ( action.type ) {
-		case HAPPYCHAT_SET_AVAILABLE:
+		case HAPPYCHAT_IO_RECEIVE_ACCEPT:
 			return action.isAvailable;
 	}
 	return state;

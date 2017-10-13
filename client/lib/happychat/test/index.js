@@ -13,9 +13,9 @@ import {
 	HAPPYCHAT_CONNECTING,
 	HAPPYCHAT_CONNECTED,
 	HAPPYCHAT_DISCONNECTED,
+	HAPPYCHAT_IO_RECEIVE_ACCEPT,
 	HAPPYCHAT_IO_RECEIVE_MESSAGE,
 	HAPPYCHAT_RECONNECTING,
-	HAPPYCHAT_SET_AVAILABLE,
 	HAPPYCHAT_SET_CHAT_STATUS,
 	HAPPYCHAT_TRANSCRIPT_REQUEST,
 } from 'state/action-types';
@@ -132,7 +132,7 @@ describe( 'connection', () => {
 			const isAvailable = true;
 			openSocket.then( () => {
 				expect( dispatch.getCall( 3 ) ).to.have.been.calledWithMatch( {
-					type: HAPPYCHAT_SET_AVAILABLE,
+					type: HAPPYCHAT_IO_RECEIVE_ACCEPT,
 					isAvailable,
 				} );
 				done(); // tell mocha the promise chain ended
