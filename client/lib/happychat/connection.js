@@ -15,9 +15,9 @@ import { HAPPYCHAT_MESSAGE_TYPES } from 'state/happychat/constants';
 import {
 	receiveAccept,
 	receiveDisconnect,
+	receiveInit,
 	receiveMessage,
 	requestChatTranscript,
-	setConnected,
 	setConnecting,
 	receiveReconnecting,
 } from 'state/happychat/connection/actions';
@@ -45,9 +45,9 @@ class Connection {
 				.once( 'connect', () => debug( 'connected' ) )
 				.on( 'token', handler => handler( { signer_user_id, jwt, locale, groups } ) )
 				.on( 'init', () => {
-					dispatch( setConnected( { signer_user_id, locale, groups, geoLocation } ) );
+					dispatch( receiveInit( { signer_user_id, locale, groups, geoLocation } ) );
 					// TODO: There's no need to dispatch a separate action to request a transcript.
-					// The HAPPYCHAT_CONNECTED action should have its own middleware handler that does this.
+					// The HAPPYCHAT_IO_RECEIVE_INIT action should have its own middleware handler that does this.
 					dispatch( requestChatTranscript() );
 					resolve( socket );
 				} )

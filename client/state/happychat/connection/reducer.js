@@ -4,9 +4,9 @@
  */
 import {
 	HAPPYCHAT_CONNECTING,
-	HAPPYCHAT_CONNECTED,
 	HAPPYCHAT_IO_RECEIVE_ACCEPT,
 	HAPPYCHAT_IO_RECEIVE_DISCONNECT,
+	HAPPYCHAT_IO_RECEIVE_INIT,
 	HAPPYCHAT_IO_RECEIVE_RECONNECTING,
 } from 'state/action-types';
 import {
@@ -20,7 +20,7 @@ import { combineReducers } from 'state/utils';
 
 const error = ( state = null, action ) => {
 	switch ( action.type ) {
-		case HAPPYCHAT_CONNECTED:
+		case HAPPYCHAT_IO_RECEIVE_INIT:
 			return null;
 		case HAPPYCHAT_IO_RECEIVE_DISCONNECT:
 			return action.errorStatus;
@@ -40,7 +40,7 @@ const status = ( state = HAPPYCHAT_CONNECTION_STATUS_UNINITIALIZED, action ) => 
 	switch ( action.type ) {
 		case HAPPYCHAT_CONNECTING:
 			return HAPPYCHAT_CONNECTION_STATUS_CONNECTING;
-		case HAPPYCHAT_CONNECTED:
+		case HAPPYCHAT_IO_RECEIVE_INIT:
 			return HAPPYCHAT_CONNECTION_STATUS_CONNECTED;
 		case HAPPYCHAT_IO_RECEIVE_DISCONNECT:
 			return HAPPYCHAT_CONNECTION_STATUS_DISCONNECTED;

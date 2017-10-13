@@ -11,9 +11,9 @@ import { EventEmitter } from 'events';
  */
 import {
 	HAPPYCHAT_CONNECTING,
-	HAPPYCHAT_CONNECTED,
 	HAPPYCHAT_IO_RECEIVE_ACCEPT,
 	HAPPYCHAT_IO_RECEIVE_DISCONNECT,
+	HAPPYCHAT_IO_RECEIVE_INIT,
 	HAPPYCHAT_IO_RECEIVE_MESSAGE,
 	HAPPYCHAT_IO_RECEIVE_RECONNECTING,
 	HAPPYCHAT_IO_RECEIVE_STATUS,
@@ -70,7 +70,7 @@ describe( 'connection', () => {
 					type: HAPPYCHAT_CONNECTING,
 				} );
 				expect( dispatch.getCall( 1 ) ).to.have.been.calledWithMatch( {
-					type: HAPPYCHAT_CONNECTED,
+					type: HAPPYCHAT_IO_RECEIVE_INIT,
 					user: { signer_user_id, locale, groups, geoLocation },
 				} );
 				expect( dispatch.getCall( 2 ) ).to.have.been.calledWithMatch( {

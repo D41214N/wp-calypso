@@ -5,7 +5,7 @@
  */
 import {
 	HAPPYCHAT_CONNECT,
-	HAPPYCHAT_CONNECTED,
+	HAPPYCHAT_IO_RECEIVE_INIT,
 	HAPPYCHAT_CONNECTING,
 	HAPPYCHAT_INITIALIZE,
 	HAPPYCHAT_IO_RECEIVE_ACCEPT,
@@ -22,7 +22,7 @@ export const connectChat = () => ( { type: HAPPYCHAT_CONNECT } );
 
 export const initialize = () => ( { type: HAPPYCHAT_INITIALIZE } );
 
-export const setConnected = user => ( { type: HAPPYCHAT_CONNECTED, user } );
+export const receiveInit = user => ( { type: HAPPYCHAT_IO_RECEIVE_INIT, user } );
 
 export const setConnecting = () => ( { type: HAPPYCHAT_CONNECTING } );
 
