@@ -13,8 +13,9 @@ import {
 	ANALYTICS_EVENT_RECORD,
 	HAPPYCHAT_CONNECT,
 	HAPPYCHAT_INITIALIZE,
-	HAPPYCHAT_IO_SEND_MESSAGE_USERINFO,
+	HAPPYCHAT_IO_SEND_MESSAGE_EVENT,
 	HAPPYCHAT_IO_SEND_MESSAGE_MESSAGE,
+	HAPPYCHAT_IO_SEND_MESSAGE_USERINFO,
 	HAPPYCHAT_IO_SEND_PREFERENCES,
 	HAPPYCHAT_IO_SEND_TYPING,
 	HAPPYCHAT_SET_CURRENT_MESSAGE,
@@ -40,6 +41,7 @@ import {
 } from 'state/action-types';
 import {
 	receiveChatTranscript,
+	sendEvent,
 	sendPreferences,
 	sendTyping,
 	sendNotTyping,
@@ -137,16 +139,6 @@ export const connectIfRecentlyActive = ( connection, store ) => {
 	return Promise.resolve(); // for testing purposes we need to return a promise
 };
 
-export const sendRouteSetEventMessage = ( connection, { getState }, action ) => {
-	const state = getState();
-	const currentUser = getCurrentUser( state );
-	if ( isHappychatClientConnected( state ) && isHappychatChatAssigned( state ) ) {
-		connection.sendEvent(
-			`Looking at https://wordpress.com${ action.path }?support_user=${ currentUser.username }`
-		);
-	}
-};
-
 export const getEventMessageFromActionData = action => {
 	// Below we've stubbed in the actions we think we'll care about, so that we can
 	// start incrementally adding messages for them.
@@ -212,7 +204,7 @@ export const sendAnalyticsLogEvent = ( connection, { meta: { analytics: analytic
 			const eventMessage = getEventMessageFromTracksData( { name, properties } );
 			if ( eventMessage ) {
 				// Once we want these events to appear in production we should change this to sendEvent
-				connection.sendEvent( eventMessage );
+				sendEvent( eventMessage );
 			}
 
 			// Always send a log for every tracks event
@@ -238,8 +230,13 @@ export const sendActionLogsAndEvents = ( connection, { getState }, action ) => {
 	const eventMessage = getEventMessageFromActionData( action );
 	if ( eventMessage ) {
 		// Once we want these events to appear in production we should change this to sendEvent
-		connection.sendEvent( eventMessage );
+		sendEvent( eventMessage );
 	}
+};
+
+const getRouteSetMessage = ( { getState }, action ) => {
+	const currentUser = getCurrentUser( getState );
+	return `Looking at https://wordpress.com${ action.path }?support_user=${ currentUser.username }`;
 };
 
 export default function( connection = null ) {
@@ -272,8 +269,9 @@ export default function( connection = null ) {
 					: noop;
 				break;
 
-			case HAPPYCHAT_IO_SEND_MESSAGE_USERINFO:
+			case HAPPYCHAT_IO_SEND_MESSAGE_EVENT:
 			case HAPPYCHAT_IO_SEND_MESSAGE_MESSAGE:
+			case HAPPYCHAT_IO_SEND_MESSAGE_USERINFO:
 			case HAPPYCHAT_IO_SEND_TYPING:
 			case HAPPYCHAT_IO_SEND_PREFERENCES:
 				connection.emit( action );
@@ -291,8 +289,11 @@ export default function( connection = null ) {
 				requestTranscript( connection, store );
 				break;
 
+			// Converts Calypso action => SocketIO action
 			case ROUTE_SET:
-				sendRouteSetEventMessage( connection, store, action );
+				isHappychatClientConnected( state ) && isHappychatChatAssigned( state )
+					? sendEvent( getRouteSetMessage( store, action ) )
+					: noop;
 				break;
 		}
 		return next( action );

@@ -22,8 +22,9 @@ import {
 	HAPPYCHAT_IO_RECEIVE_RECONNECTING,
 	HAPPYCHAT_IO_RECEIVE_TOKEN,
 	HAPPYCHAT_IO_RECEIVE_UNAUTHORIZED,
-	HAPPYCHAT_IO_SEND_MESSAGE_USERINFO,
+	HAPPYCHAT_IO_SEND_MESSAGE_EVENT,
 	HAPPYCHAT_IO_SEND_MESSAGE_MESSAGE,
+	HAPPYCHAT_IO_SEND_MESSAGE_USERINFO,
 	HAPPYCHAT_IO_SEND_PREFERENCES,
 	HAPPYCHAT_IO_SEND_TYPING,
 	HAPPYCHAT_TRANSCRIPT_RECEIVE,
@@ -143,6 +144,25 @@ export const sendChatMessage = message => ( {
 } );
 
 /**
+ * Returns an action object that prepares the event message
+ * to be send to Happychat as a SocketIO event.
+ *
+ * @param  { Object } message Message to be sent
+ * @return { Object } Action object
+ */
+export const sendEvent = message => ( {
+	type: HAPPYCHAT_IO_SEND_MESSAGE_EVENT,
+	event: 'message',
+	error: 'failed to send message',
+	payload: {
+		id: uuid(),
+		text: message,
+		type: HAPPYCHAT_MESSAGE_TYPES.CUSTOMER_EVENT,
+		meta: { forOperator: true, event_type: HAPPYCHAT_MESSAGE_TYPES.CUSTOMER_EVENT },
+	},
+} );
+
+/**
  * Returns an action object that prepares the user information
  * to be send to Happychat as a SocketIO event.
  *
@@ -154,8 +174,8 @@ export const sendUserInfo = info => ( {
 	event: 'message',
 	error: 'failed to send message',
 	payload: {
-		type: HAPPYCHAT_MESSAGE_TYPES.CUSTOMER_INFO,
 		id: uuid(),
+		type: HAPPYCHAT_MESSAGE_TYPES.CUSTOMER_INFO,
 		meta: {
 			forOperator: true,
 			...info,

@@ -80,19 +80,6 @@ class Connection {
 		);
 	}
 
-	sendEvent( message ) {
-		this.openSocket.then(
-			socket =>
-				socket.emit( 'message', {
-					text: message,
-					id: uuid(),
-					type: HAPPYCHAT_MESSAGE_TYPES.CUSTOMER_EVENT,
-					meta: { forOperator: true, event_type: HAPPYCHAT_MESSAGE_TYPES.CUSTOMER_EVENT },
-				} ),
-			e => debug( 'failed to send message', e )
-		);
-	}
-
 	sendLog( message ) {
 		this.openSocket.then(
 			socket =>
