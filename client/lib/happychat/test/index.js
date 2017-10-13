@@ -10,7 +10,7 @@ import { EventEmitter } from 'events';
  * Internal dependencies
  */
 import {
-	HAPPYCHAT_CONNECTING,
+	HAPPYCHAT_IO_INIT,
 	HAPPYCHAT_IO_RECEIVE_ACCEPT,
 	HAPPYCHAT_IO_RECEIVE_DISCONNECT,
 	HAPPYCHAT_IO_RECEIVE_INIT,
@@ -66,9 +66,7 @@ describe( 'connection', () => {
 
 		it( 'init event', done => {
 			openSocket.then( () => {
-				expect( dispatch.getCall( 0 ) ).to.have.been.calledWithMatch( {
-					type: HAPPYCHAT_CONNECTING,
-				} );
+				expect( dispatch.getCall( 0 ) ).to.have.been.calledWithMatch( { type: HAPPYCHAT_IO_INIT } );
 				expect( dispatch.getCall( 1 ) ).to.have.been.calledWithMatch( {
 					type: HAPPYCHAT_IO_RECEIVE_INIT,
 					user: { signer_user_id, locale, groups, geoLocation },

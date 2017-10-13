@@ -5,8 +5,8 @@
  */
 import {
 	HAPPYCHAT_CONNECT,
-	HAPPYCHAT_CONNECTING,
 	HAPPYCHAT_INITIALIZE,
+	HAPPYCHAT_IO_INIT,
 	HAPPYCHAT_IO_RECEIVE_ACCEPT,
 	HAPPYCHAT_IO_RECEIVE_CONNECT,
 	HAPPYCHAT_IO_RECEIVE_DISCONNECT,
@@ -36,7 +36,7 @@ export const receiveUnauthorized = errorStatus => ( {
 	errorStatus,
 } );
 
-export const setConnecting = () => ( { type: HAPPYCHAT_CONNECTING } );
+export const initConnection = () => ( { type: HAPPYCHAT_IO_INIT } );
 
 export const receiveDisconnect = errorStatus => ( {
 	type: HAPPYCHAT_IO_RECEIVE_DISCONNECT,

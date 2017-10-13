@@ -13,6 +13,7 @@ import { isString } from 'lodash';
  */
 import { HAPPYCHAT_MESSAGE_TYPES } from 'state/happychat/constants';
 import {
+	initConnection,
 	receiveAccept,
 	receiveConnect,
 	receiveDisconnect,
@@ -21,7 +22,6 @@ import {
 	receiveToken,
 	receiveUnauthorized,
 	requestChatTranscript,
-	setConnecting,
 	receiveReconnecting,
 } from 'state/happychat/connection/actions';
 import { receiveStatus } from 'state/happychat/chat/actions';
@@ -40,7 +40,7 @@ class Connection {
 			return this.openSocket;
 		}
 
-		dispatch( setConnecting() );
+		dispatch( initConnection() );
 
 		const socket = buildConnection( url );
 		this.openSocket = new Promise( ( resolve, reject ) => {

@@ -3,7 +3,7 @@
  * Internal dependencies
  */
 import {
-	HAPPYCHAT_CONNECTING,
+	HAPPYCHAT_IO_INIT,
 	HAPPYCHAT_IO_RECEIVE_ACCEPT,
 	HAPPYCHAT_IO_RECEIVE_DISCONNECT,
 	HAPPYCHAT_IO_RECEIVE_INIT,
@@ -41,7 +41,7 @@ const error = ( state = null, action ) => {
  */
 const status = ( state = HAPPYCHAT_CONNECTION_STATUS_UNINITIALIZED, action ) => {
 	switch ( action.type ) {
-		case HAPPYCHAT_CONNECTING:
+		case HAPPYCHAT_IO_INIT:
 			return HAPPYCHAT_CONNECTION_STATUS_CONNECTING;
 		case HAPPYCHAT_IO_RECEIVE_INIT:
 			return HAPPYCHAT_CONNECTION_STATUS_CONNECTED;
