@@ -5,13 +5,11 @@
  */
 
 import IO from 'socket.io-client';
-import { v4 as uuid } from 'uuid';
 import { isString } from 'lodash';
 
 /**
  * Internal dependencies
  */
-import { HAPPYCHAT_MESSAGE_TYPES } from 'state/happychat/constants';
 import {
 	initConnection,
 	receiveAccept,
@@ -77,19 +75,6 @@ class Connection {
 		this.openSocket.then(
 			socket => socket.emit( action.event, action.payload ),
 			e => this.dispatch( receiveError( action.error || '' + e ) )
-		);
-	}
-
-	sendLog( message ) {
-		this.openSocket.then(
-			socket =>
-				socket.emit( 'message', {
-					text: message,
-					id: uuid(),
-					type: HAPPYCHAT_MESSAGE_TYPES.LOG,
-					meta: { forOperator: true, event_type: HAPPYCHAT_MESSAGE_TYPES.LOG },
-				} ),
-			e => debug( 'failed to send message', e )
 		);
 	}
 

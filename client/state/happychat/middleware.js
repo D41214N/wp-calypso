@@ -14,6 +14,7 @@ import {
 	HAPPYCHAT_CONNECT,
 	HAPPYCHAT_INITIALIZE,
 	HAPPYCHAT_IO_SEND_MESSAGE_EVENT,
+	HAPPYCHAT_IO_SEND_MESSAGE_LOG,
 	HAPPYCHAT_IO_SEND_MESSAGE_MESSAGE,
 	HAPPYCHAT_IO_SEND_MESSAGE_USERINFO,
 	HAPPYCHAT_IO_SEND_PREFERENCES,
@@ -42,6 +43,7 @@ import {
 import {
 	receiveChatTranscript,
 	sendEvent,
+	sendLog,
 	sendPreferences,
 	sendTyping,
 	sendNotTyping,
@@ -208,7 +210,7 @@ export const sendAnalyticsLogEvent = ( connection, { meta: { analytics: analytic
 			}
 
 			// Always send a log for every tracks event
-			connection.sendLog( name );
+			sendLog( name );
 		}
 	} );
 };
@@ -270,10 +272,11 @@ export default function( connection = null ) {
 				break;
 
 			case HAPPYCHAT_IO_SEND_MESSAGE_EVENT:
+			case HAPPYCHAT_IO_SEND_MESSAGE_LOG:
 			case HAPPYCHAT_IO_SEND_MESSAGE_MESSAGE:
 			case HAPPYCHAT_IO_SEND_MESSAGE_USERINFO:
-			case HAPPYCHAT_IO_SEND_TYPING:
 			case HAPPYCHAT_IO_SEND_PREFERENCES:
+			case HAPPYCHAT_IO_SEND_TYPING:
 				connection.emit( action );
 				break;
 

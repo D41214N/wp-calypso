@@ -24,6 +24,7 @@ import {
 	HAPPYCHAT_IO_RECEIVE_UNAUTHORIZED,
 	HAPPYCHAT_IO_SEND_MESSAGE_EVENT,
 	HAPPYCHAT_IO_SEND_MESSAGE_MESSAGE,
+	HAPPYCHAT_IO_SEND_MESSAGE_LOG,
 	HAPPYCHAT_IO_SEND_MESSAGE_USERINFO,
 	HAPPYCHAT_IO_SEND_PREFERENCES,
 	HAPPYCHAT_IO_SEND_TYPING,
@@ -159,6 +160,25 @@ export const sendEvent = message => ( {
 		text: message,
 		type: HAPPYCHAT_MESSAGE_TYPES.CUSTOMER_EVENT,
 		meta: { forOperator: true, event_type: HAPPYCHAT_MESSAGE_TYPES.CUSTOMER_EVENT },
+	},
+} );
+
+/**
+ * Returns an action object that prepares the log message
+ * to be send to Happychat as a SocketIO event.
+ *
+ * @param  { Object } message Message to be sent
+ * @return { Object } Action object
+ */
+export const sendLog = message => ( {
+	type: HAPPYCHAT_IO_SEND_MESSAGE_LOG,
+	event: 'message',
+	error: 'failed to send message',
+	payload: {
+		id: uuid(),
+		text: message,
+		type: HAPPYCHAT_MESSAGE_TYPES.LOG,
+		meta: { forOperator: true, event_type: HAPPYCHAT_MESSAGE_TYPES.LOG },
 	},
 } );
 
