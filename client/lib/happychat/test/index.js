@@ -13,7 +13,7 @@ import {
 	HAPPYCHAT_CONNECTING,
 	HAPPYCHAT_CONNECTED,
 	HAPPYCHAT_DISCONNECTED,
-	HAPPYCHAT_RECEIVE_EVENT,
+	HAPPYCHAT_IO_RECEIVE_MESSAGE,
 	HAPPYCHAT_RECONNECTING,
 	HAPPYCHAT_SET_AVAILABLE,
 	HAPPYCHAT_SET_CHAT_STATUS,
@@ -142,16 +142,16 @@ describe( 'connection', () => {
 		} );
 
 		it( 'message event', done => {
-			const event = 'testing msg';
+			const message = 'testing msg';
 			openSocket.then( () => {
 				expect( dispatch.getCall( 3 ) ).to.have.been.calledWithMatch( {
-					type: HAPPYCHAT_RECEIVE_EVENT,
-					event,
+					type: HAPPYCHAT_IO_RECEIVE_MESSAGE,
+					message,
 				} );
 				done(); // tell mocha the promise chain ended
 			} );
 			socket.emit( 'init' ); // force openSocket promise to resolve
-			socket.emit( 'message', event );
+			socket.emit( 'message', message );
 		} );
 	} );
 } );

@@ -13,7 +13,7 @@ import { isString } from 'lodash';
  */
 import { HAPPYCHAT_MESSAGE_TYPES } from 'state/happychat/constants';
 import {
-	receiveChatEvent,
+	receiveMessage,
 	requestChatTranscript,
 	setConnected,
 	setConnecting,
@@ -59,7 +59,7 @@ class Connection {
 				.on( 'reconnecting', () => dispatch( setReconnecting() ) )
 				.on( 'status', status => dispatch( setHappychatChatStatus( status ) ) )
 				.on( 'accept', accept => dispatch( setHappychatAvailable( accept ) ) )
-				.on( 'message', message => dispatch( receiveChatEvent( message ) ) );
+				.on( 'message', message => dispatch( receiveMessage( message ) ) );
 		} );
 
 		return this.openSocket;

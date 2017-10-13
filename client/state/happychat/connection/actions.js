@@ -9,7 +9,7 @@ import {
 	HAPPYCHAT_CONNECTING,
 	HAPPYCHAT_DISCONNECTED,
 	HAPPYCHAT_INITIALIZE,
-	HAPPYCHAT_RECEIVE_EVENT,
+	HAPPYCHAT_IO_RECEIVE_MESSAGE,
 	HAPPYCHAT_RECONNECTING,
 	HAPPYCHAT_SEND_MESSAGE,
 	HAPPYCHAT_SEND_USER_INFO,
@@ -54,7 +54,7 @@ export const sendUserInfo = ( howCanWeHelp, howYouFeel, site ) => {
 	};
 };
 
-export const receiveChatEvent = event => ( { type: HAPPYCHAT_RECEIVE_EVENT, event } );
+export const receiveMessage = message => ( { type: HAPPYCHAT_IO_RECEIVE_MESSAGE, message } );
 
 export const requestChatTranscript = () => ( { type: HAPPYCHAT_TRANSCRIPT_REQUEST } );
 
