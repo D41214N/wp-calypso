@@ -8,6 +8,7 @@ import {
 	HAPPYCHAT_CONNECTING,
 	HAPPYCHAT_INITIALIZE,
 	HAPPYCHAT_IO_RECEIVE_ACCEPT,
+	HAPPYCHAT_IO_RECEIVE_CONNECT,
 	HAPPYCHAT_IO_RECEIVE_DISCONNECT,
 	HAPPYCHAT_IO_RECEIVE_INIT,
 	HAPPYCHAT_IO_RECEIVE_MESSAGE,
@@ -23,6 +24,8 @@ import {
 export const connectChat = () => ( { type: HAPPYCHAT_CONNECT } );
 
 export const initialize = () => ( { type: HAPPYCHAT_INITIALIZE } );
+
+export const receiveConnect = () => ( { type: HAPPYCHAT_IO_RECEIVE_CONNECT } );
 
 export const receiveToken = () => ( { type: HAPPYCHAT_IO_RECEIVE_TOKEN } );
 

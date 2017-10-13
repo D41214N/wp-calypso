@@ -14,6 +14,7 @@ import { isString } from 'lodash';
 import { HAPPYCHAT_MESSAGE_TYPES } from 'state/happychat/constants';
 import {
 	receiveAccept,
+	receiveConnect,
 	receiveDisconnect,
 	receiveInit,
 	receiveMessage,
@@ -44,7 +45,7 @@ class Connection {
 		const socket = buildConnection( url );
 		this.openSocket = new Promise( ( resolve, reject ) => {
 			socket
-				.once( 'connect', () => debug( 'connected' ) )
+				.once( 'connect', () => dispatch( receiveConnect() ) )
 				.on( 'token', handler => {
 					dispatch( receiveToken() );
 					handler( { signer_user_id, jwt, locale, groups } );
