@@ -10,6 +10,7 @@ import {
 	HAPPYCHAT_IO_RECEIVE_ACCEPT,
 	HAPPYCHAT_IO_RECEIVE_CONNECT,
 	HAPPYCHAT_IO_RECEIVE_DISCONNECT,
+	HAPPYCHAT_IO_RECEIVE_ERROR,
 	HAPPYCHAT_IO_RECEIVE_INIT,
 	HAPPYCHAT_IO_RECEIVE_MESSAGE,
 	HAPPYCHAT_IO_RECEIVE_RECONNECTING,
@@ -30,6 +31,8 @@ export const receiveConnect = () => ( { type: HAPPYCHAT_IO_RECEIVE_CONNECT } );
 export const receiveToken = () => ( { type: HAPPYCHAT_IO_RECEIVE_TOKEN } );
 
 export const receiveInit = user => ( { type: HAPPYCHAT_IO_RECEIVE_INIT, user } );
+
+export const receiveError = error => ( { type: HAPPYCHAT_IO_RECEIVE_ERROR, error } );
 
 export const receiveUnauthorized = errorStatus => ( {
 	type: HAPPYCHAT_IO_RECEIVE_UNAUTHORIZED,

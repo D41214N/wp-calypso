@@ -17,6 +17,7 @@ import {
 	receiveAccept,
 	receiveConnect,
 	receiveDisconnect,
+	receiveError,
 	receiveInit,
 	receiveMessage,
 	receiveToken,
@@ -39,7 +40,7 @@ class Connection {
 			debug( 'socket is already connected' );
 			return this.openSocket;
 		}
-
+		this.dispatch = dispatch;
 		dispatch( initConnection() );
 
 		const socket = buildConnection( url );
@@ -70,6 +71,13 @@ class Connection {
 		} );
 
 		return this.openSocket;
+	}
+
+	emit( action ) {
+		this.openSocket.then(
+			socket => socket.emit( action.event, action.payload ),
+			e => this.dispatch( receiveError( e ) )
+		);
 	}
 
 	typing( message ) {
