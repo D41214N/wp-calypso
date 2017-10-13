@@ -12,8 +12,8 @@ import { EventEmitter } from 'events';
 import {
 	HAPPYCHAT_CONNECTING,
 	HAPPYCHAT_CONNECTED,
-	HAPPYCHAT_DISCONNECTED,
 	HAPPYCHAT_IO_RECEIVE_ACCEPT,
+	HAPPYCHAT_IO_RECEIVE_DISCONNECT,
 	HAPPYCHAT_IO_RECEIVE_MESSAGE,
 	HAPPYCHAT_IO_RECEIVE_RECONNECTING,
 	HAPPYCHAT_IO_RECEIVE_STATUS,
@@ -95,7 +95,7 @@ describe( 'connection', () => {
 			const errorStatus = 'testing reasons';
 			openSocket.then( () => {
 				expect( dispatch.getCall( 3 ) ).to.have.been.calledWithMatch( {
-					type: HAPPYCHAT_DISCONNECTED,
+					type: HAPPYCHAT_IO_RECEIVE_DISCONNECT,
 					errorStatus,
 				} );
 				done(); // tell mocha the promise chain ended

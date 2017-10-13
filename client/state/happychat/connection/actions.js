@@ -7,9 +7,9 @@ import {
 	HAPPYCHAT_CONNECT,
 	HAPPYCHAT_CONNECTED,
 	HAPPYCHAT_CONNECTING,
-	HAPPYCHAT_DISCONNECTED,
 	HAPPYCHAT_INITIALIZE,
 	HAPPYCHAT_IO_RECEIVE_ACCEPT,
+	HAPPYCHAT_IO_RECEIVE_DISCONNECT,
 	HAPPYCHAT_IO_RECEIVE_MESSAGE,
 	HAPPYCHAT_IO_RECEIVE_RECONNECTING,
 	HAPPYCHAT_SEND_MESSAGE,
@@ -26,7 +26,10 @@ export const setConnected = user => ( { type: HAPPYCHAT_CONNECTED, user } );
 
 export const setConnecting = () => ( { type: HAPPYCHAT_CONNECTING } );
 
-export const setDisconnected = errorStatus => ( { type: HAPPYCHAT_DISCONNECTED, errorStatus } );
+export const receiveDisconnect = errorStatus => ( {
+	type: HAPPYCHAT_IO_RECEIVE_DISCONNECT,
+	errorStatus,
+} );
 
 export const receiveReconnecting = () => ( { type: HAPPYCHAT_IO_RECEIVE_RECONNECTING } );
 

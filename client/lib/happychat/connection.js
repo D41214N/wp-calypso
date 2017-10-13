@@ -14,11 +14,11 @@ import { isString } from 'lodash';
 import { HAPPYCHAT_MESSAGE_TYPES } from 'state/happychat/constants';
 import {
 	receiveAccept,
+	receiveDisconnect,
 	receiveMessage,
 	requestChatTranscript,
 	setConnected,
 	setConnecting,
-	setDisconnected,
 	receiveReconnecting,
 } from 'state/happychat/connection/actions';
 import { receiveStatus } from 'state/happychat/chat/actions';
@@ -53,9 +53,9 @@ class Connection {
 				} )
 				.on( 'unauthorized', () => {
 					socket.close();
-					reject( 'user is not authorized' );
+					reject( 'User is not authorized' );
 				} )
-				.on( 'disconnect', reason => dispatch( setDisconnected( reason ) ) )
+				.on( 'disconnect', reason => dispatch( receiveDisconnect( reason ) ) )
 				.on( 'reconnecting', () => dispatch( receiveReconnecting() ) )
 				.on( 'status', status => dispatch( receiveStatus( status ) ) )
 				.on( 'accept', accept => dispatch( receiveAccept( accept ) ) )
