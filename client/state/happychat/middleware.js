@@ -13,6 +13,7 @@ import {
 	ANALYTICS_EVENT_RECORD,
 	HAPPYCHAT_CONNECT,
 	HAPPYCHAT_INITIALIZE,
+	HAPPYCHAT_IO_REQUEST_TRANSCRIPT,
 	HAPPYCHAT_IO_SEND_MESSAGE_EVENT,
 	HAPPYCHAT_IO_SEND_MESSAGE_LOG,
 	HAPPYCHAT_IO_SEND_MESSAGE_MESSAGE,
@@ -20,7 +21,6 @@ import {
 	HAPPYCHAT_IO_SEND_PREFERENCES,
 	HAPPYCHAT_IO_SEND_TYPING,
 	HAPPYCHAT_SET_CURRENT_MESSAGE,
-	HAPPYCHAT_TRANSCRIPT_REQUEST,
 	HELP_CONTACT_FORM_SITE_SELECT,
 	ROUTE_SET,
 	COMMENTS_CHANGE_STATUS,
@@ -41,7 +41,6 @@ import {
 	SITE_SETTINGS_SAVE_SUCCESS,
 } from 'state/action-types';
 import {
-	receiveChatTranscript,
 	sendEvent,
 	sendLog,
 	sendPreferences,
@@ -122,18 +121,6 @@ export const connectChat = ( connection, { getState, dispatch } ) => {
 		.catch( e => debug( 'failed to start Happychat session', e, e.stack ) );
 };
 
-export const requestTranscript = ( connection, { dispatch } ) => {
-	debug( 'requesting current session transcript' );
-
-	// passing a null timestamp will request the latest session's transcript
-	return connection
-		.transcript( null )
-		.then(
-			result => dispatch( receiveChatTranscript( result.messages, result.timestamp ) ),
-			e => debug( 'failed to get transcript', e )
-		);
-};
-
 export const connectIfRecentlyActive = ( connection, store ) => {
 	if ( wasHappychatRecentlyActive( store.getState() ) ) {
 		return connectChat( connection, store );
@@ -199,23 +186,23 @@ export const getEventMessageFromTracksData = ( { name, properties } ) => {
 	return null;
 };
 
-export const sendAnalyticsLogEvent = ( connection, { meta: { analytics: analyticsMeta } } ) => {
+export const sendAnalyticsLogEvent = ( dispatch, { meta: { analytics: analyticsMeta } } ) => {
 	analyticsMeta.forEach( ( { type, payload: { service, name, properties } } ) => {
 		if ( type === ANALYTICS_EVENT_RECORD && service === 'tracks' ) {
 			// Check if this event should generate a timeline event, and send it if so
 			const eventMessage = getEventMessageFromTracksData( { name, properties } );
 			if ( eventMessage ) {
 				// Once we want these events to appear in production we should change this to sendEvent
-				sendEvent( eventMessage );
+				dispatch( sendEvent( eventMessage ) );
 			}
 
 			// Always send a log for every tracks event
-			sendLog( name );
+			dispatch( sendLog( name ) );
 		}
 	} );
 };
 
-export const sendActionLogsAndEvents = ( connection, { getState }, action ) => {
+export const sendActionLogsAndEvents = ( dispatch, { getState }, action ) => {
 	const state = getState();
 
 	// If there's not an active Happychat session, do nothing
@@ -225,19 +212,19 @@ export const sendActionLogsAndEvents = ( connection, { getState }, action ) => {
 
 	// If there's analytics metadata attached to this action, send analytics events
 	if ( has( action, 'meta.analytics' ) ) {
-		sendAnalyticsLogEvent( connection, action );
+		sendAnalyticsLogEvent( dispatch, action );
 	}
 
 	// Check if this action should generate a timeline event, and send it if so
 	const eventMessage = getEventMessageFromActionData( action );
 	if ( eventMessage ) {
 		// Once we want these events to appear in production we should change this to sendEvent
-		sendEvent( eventMessage );
+		dispatch( sendEvent( eventMessage ) );
 	}
 };
 
-const getRouteSetMessage = ( { getState }, action ) => {
-	const currentUser = getCurrentUser( getState );
+export const getRouteSetMessage = ( state, action ) => {
+	const currentUser = getCurrentUser( state );
 	return `Looking at https://wordpress.com${ action.path }?support_user=${ currentUser.username }`;
 };
 
@@ -250,7 +237,9 @@ export default function( connection = null ) {
 
 	return store => next => action => {
 		// Send any relevant log/event data from this action to Happychat
-		sendActionLogsAndEvents( connection, store, action );
+		sendActionLogsAndEvents( store.dispatch, store, action );
+
+		const state = store.getState();
 
 		switch ( action.type ) {
 			case HAPPYCHAT_CONNECT:
@@ -263,7 +252,6 @@ export default function( connection = null ) {
 
 			// Converts Calypso action => SocketIO action
 			case HELP_CONTACT_FORM_SITE_SELECT:
-				const state = store.getState();
 				isHappychatClientConnected( state )
 					? store.dispatch(
 							sendPreferences( getCurrentUserLocale( state ), getGroups( state, action.siteId ) )
@@ -280,6 +268,10 @@ export default function( connection = null ) {
 				connection.emit( action );
 				break;
 
+			case HAPPYCHAT_IO_REQUEST_TRANSCRIPT:
+				connection.request( action, 10000 );
+				break;
+
 			// Converts Happychat UI action => SocketIO action
 			case HAPPYCHAT_SET_CURRENT_MESSAGE:
 				const { message } = action;
@@ -288,14 +280,10 @@ export default function( connection = null ) {
 					: sendThrottledTyping( store.dispatch, message );
 				break;
 
-			case HAPPYCHAT_TRANSCRIPT_REQUEST:
-				requestTranscript( connection, store );
-				break;
-
 			// Converts Calypso action => SocketIO action
 			case ROUTE_SET:
 				isHappychatClientConnected( state ) && isHappychatChatAssigned( state )
-					? sendEvent( getRouteSetMessage( store, action ) )
+					? store.dispatch( sendEvent( getRouteSetMessage( state, action ) ) )
 					: noop;
 				break;
 		}

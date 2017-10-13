@@ -1,7 +1,10 @@
 /** @format */
 /**
  * External dependencies
+ *
+ * @format
  */
+
 import { expect } from 'chai';
 import { stub } from 'sinon';
 import { EventEmitter } from 'events';
@@ -17,7 +20,7 @@ import {
 	HAPPYCHAT_IO_RECEIVE_MESSAGE,
 	HAPPYCHAT_IO_RECEIVE_RECONNECTING,
 	HAPPYCHAT_IO_RECEIVE_STATUS,
-	HAPPYCHAT_TRANSCRIPT_REQUEST,
+	HAPPYCHAT_IO_REQUEST_TRANSCRIPT,
 } from 'state/action-types';
 
 import buildConnection from '../connection';
@@ -72,7 +75,7 @@ describe( 'connection', () => {
 					user: { signer_user_id, locale, groups, geoLocation },
 				} );
 				expect( dispatch.getCall( 2 ) ).to.have.been.calledWithMatch( {
-					type: HAPPYCHAT_TRANSCRIPT_REQUEST,
+					type: HAPPYCHAT_IO_REQUEST_TRANSCRIPT,
 				} );
 				done(); // tell mocha the promise chain ended
 			} );

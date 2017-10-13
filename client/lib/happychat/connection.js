@@ -51,8 +51,6 @@ class Connection {
 				} )
 				.on( 'init', () => {
 					dispatch( receiveInit( { signer_user_id, locale, groups, geoLocation } ) );
-					// TODO: There's no need to dispatch a separate action to request a transcript.
-					// The HAPPYCHAT_IO_RECEIVE_INIT action should have its own middleware handler that does this.
 					dispatch( requestChatTranscript() );
 					resolve( socket );
 				} )
@@ -71,28 +69,48 @@ class Connection {
 		return this.openSocket;
 	}
 
+	/**
+	 * Given a Redux action, emits a SocketIO event.
+	 *
+	 * @param  { Object } action Redux action with {event, payload, error} props
+	 * @return { Object } A socket promise
+	 */
 	emit( action ) {
-		this.openSocket.then(
+		return this.openSocket.then(
 			socket => socket.emit( action.event, action.payload ),
 			e => this.dispatch( receiveError( action.error || '' + e ) )
 		);
 	}
 
-	transcript( timestamp ) {
+	/**
+	 * Given a Redux action and a timeout, emits a SocketIO event that request
+	 * some info to server as a Promise. Upon resolution of that request promise
+	 * the action.callback will be dispatched (it should be a Redux action creator).
+	 * If server response takes more than timeout,
+	 * the action.callbackTimeout will be dispatched instead.
+	 *
+	 * @param  { Object } action Redux action with {event, payload, error} props
+	 * @param  { Number } timeout How long (in milliseconds) has the server to respond
+	 * @return { Object } A socket promise
+	 */
+	request( action, timeout ) {
 		return this.openSocket.then( socket =>
 			Promise.race( [
 				new Promise( ( resolve, reject ) => {
-					socket.emit( 'transcript', timestamp || null, ( e, result ) => {
+					socket.emit( action.event, action.payload, ( e, result ) => {
 						if ( e ) {
+							this.dispatch( receiveError( action.error + e ) );
 							return reject( new Error( e ) );
 						}
+						this.dispatch( action.callback( result ) );
 						resolve( result );
 					} );
 				} ),
 				new Promise( ( resolve, reject ) =>
 					setTimeout( () => {
 						reject( Error( 'timeout' ) );
-					}, 10000 )
+						this.dispatch( action.callbackTimeout() );
+					}, timeout )
 				),
 			] )
 		);

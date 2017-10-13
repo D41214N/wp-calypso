@@ -22,14 +22,15 @@ import {
 	HAPPYCHAT_IO_RECEIVE_RECONNECTING,
 	HAPPYCHAT_IO_RECEIVE_TOKEN,
 	HAPPYCHAT_IO_RECEIVE_UNAUTHORIZED,
+	HAPPYCHAT_IO_REQUEST_TRANSCRIPT,
+	HAPPYCHAT_IO_REQUEST_TRANSCRIPT_RECEIVE,
+	HAPPYCHAT_IO_REQUEST_TRANSCRIPT_TIMEOUT,
 	HAPPYCHAT_IO_SEND_MESSAGE_EVENT,
 	HAPPYCHAT_IO_SEND_MESSAGE_MESSAGE,
 	HAPPYCHAT_IO_SEND_MESSAGE_LOG,
 	HAPPYCHAT_IO_SEND_MESSAGE_USERINFO,
 	HAPPYCHAT_IO_SEND_PREFERENCES,
 	HAPPYCHAT_IO_SEND_TYPING,
-	HAPPYCHAT_TRANSCRIPT_RECEIVE,
-	HAPPYCHAT_TRANSCRIPT_REQUEST,
 } from 'state/action-types';
 
 export const connectChat = () => ( { type: HAPPYCHAT_CONNECT } );
@@ -245,10 +246,39 @@ export const sendPreferences = ( locale, groups ) => ( {
 	},
 } );
 
-export const requestChatTranscript = () => ( { type: HAPPYCHAT_TRANSCRIPT_REQUEST } );
-
-export const receiveChatTranscript = ( messages, timestamp ) => ( {
-	type: HAPPYCHAT_TRANSCRIPT_RECEIVE,
+/**
+ * Returns an action object for the transcript reception.
+ *
+ * @param { Object } result An object with {messages, timestamp} props
+ * @return { Object } Action object
+ */
+export const receiveChatTranscript = ( { messages, timestamp } ) => ( {
+	type: HAPPYCHAT_IO_REQUEST_TRANSCRIPT_RECEIVE,
 	messages,
 	timestamp,
+} );
+
+/**
+ * Returns an action object for the timeout of the transcript request.
+ *
+ * @return { Object } Action object
+ */
+export const receiveChatTranscriptTimeout = () => ( {
+	type: HAPPYCHAT_IO_REQUEST_TRANSCRIPT_TIMEOUT,
+} );
+
+/**
+ * Returns an action object that prepares the transcript request
+ * to be send to happychat as a SocketIO event.
+ *
+ * @param { String } timestamp Latest transcript timestamp
+ * @return { Object } Action object
+ */
+export const requestChatTranscript = timestamp => ( {
+	type: HAPPYCHAT_IO_REQUEST_TRANSCRIPT,
+	event: 'transcript',
+	error: 'failed to get transcript',
+	payload: timestamp,
+	callback: receiveChatTranscript,
+	callbackTimeout: receiveChatTranscriptTimeout,
 } );

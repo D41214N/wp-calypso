@@ -14,10 +14,8 @@ import { spy, stub } from 'sinon';
 import middleware, {
 	connectChat,
 	connectIfRecentlyActive,
-	requestTranscript,
 	sendActionLogsAndEvents,
 	sendAnalyticsLogEvent,
-	sendRouteSetEventMessage,
 } from '../middleware';
 import {
 	HAPPYCHAT_CHAT_STATUS_ASSIGNED,
@@ -32,12 +30,19 @@ import {
 	ANALYTICS_EVENT_RECORD,
 	HAPPYCHAT_BLUR,
 	HAPPYCHAT_IO_SEND_MESSAGE_MESSAGE,
+	HAPPYCHAT_IO_SEND_MESSAGE_EVENT,
+	HAPPYCHAT_IO_SEND_MESSAGE_LOG,
 	HAPPYCHAT_SET_CURRENT_MESSAGE,
-	HAPPYCHAT_TRANSCRIPT_RECEIVE,
 	HELP_CONTACT_FORM_SITE_SELECT,
+	ROUTE_SET,
 } from 'state/action-types';
 import { useSandbox } from 'test/helpers/use-sinon';
-import { sendTyping, sendNotTyping, sendPreferences } from 'state/happychat/connection/actions';
+import {
+	sendLog,
+	sendTyping,
+	sendNotTyping,
+	sendPreferences,
+} from 'state/happychat/connection/actions';
 import { getCurrentUserLocale } from 'state/current-user/selectors';
 import { getGroups } from 'state/happychat/selectors';
 
@@ -206,33 +211,6 @@ describe( 'middleware', () => {
 		} );
 	} );
 
-	describe( 'HAPPYCHAT_TRANSCRIPT_REQUEST action', () => {
-		test( 'should fetch transcript from connection and dispatch receive action', () => {
-			const state = deepFreeze( {
-				happychat: {
-					chat: { timeline: [] },
-				},
-			} );
-			const response = {
-				messages: [ { text: 'hello' } ],
-				timestamp: 100000,
-			};
-
-			const connection = { transcript: stub().returns( Promise.resolve( response ) ) };
-			const dispatch = stub();
-			const getState = stub().returns( state );
-
-			return requestTranscript( connection, { getState, dispatch } ).then( () => {
-				expect( connection.transcript ).to.have.been.called;
-
-				expect( dispatch ).to.have.been.calledWith( {
-					type: HAPPYCHAT_TRANSCRIPT_RECEIVE,
-					...response,
-				} );
-			} );
-		} );
-	} );
-
 	describe( 'HELP_CONTACT_FORM_SITE_SELECT action', () => {
 		test( 'should send the locale and groups through the connection and send a preferences signal', () => {
 			const state = {
@@ -290,8 +268,8 @@ describe( 'middleware', () => {
 	} );
 
 	describe( 'ROUTE_SET action', () => {
-		let connection;
-		const action = { path: '/me' };
+		let dispatch;
+		const action = { type: ROUTE_SET, path: '/me' };
 		const state = {
 			currentUser: {
 				id: '2',
@@ -311,13 +289,13 @@ describe( 'middleware', () => {
 		};
 
 		beforeEach( () => {
-			connection = { sendEvent: stub() };
+			dispatch = spy();
 		} );
 
 		test( 'should sent the page URL the user is in', () => {
 			const getState = () => state;
-			sendRouteSetEventMessage( connection, { getState }, action );
-			expect( connection.sendEvent ).to.have.been.calledWith(
+			middleware( noop )( { getState, dispatch } )( noop )( action );
+			expect( dispatch.getCall( 0 ).args[ 0 ].payload.text ).to.be.equals(
 				'Looking at https://wordpress.com/me?support_user=Link'
 			);
 		} );
@@ -327,8 +305,8 @@ describe( 'middleware', () => {
 				Object.assign( {}, state, {
 					happychat: { connection: { status: HAPPYCHAT_CONNECTION_STATUS_UNINITIALIZED } },
 				} );
-			sendRouteSetEventMessage( connection, { getState }, action );
-			expect( connection.sendEvent ).to.not.have.been.called;
+			middleware( noop )( { getState, dispatch } )( noop )( action );
+			expect( dispatch ).to.not.have.been.called;
 		} );
 
 		test( 'should not sent the page URL the user is in when chat is not assigned', () => {
@@ -336,19 +314,16 @@ describe( 'middleware', () => {
 				Object.assign( {}, state, {
 					happychat: { chat: { status: HAPPYCHAT_CHAT_STATUS_PENDING } },
 				} );
-			sendRouteSetEventMessage( connection, { getState }, action );
-			expect( connection.sendEvent ).to.not.have.been.called;
+			middleware( noop )( { getState, dispatch } )( noop )( action );
+			expect( dispatch ).to.not.have.been.called;
 		} );
 	} );
 
 	describe( '#sendAnalyticsLogEvent', () => {
-		let connection;
+		let dispatch;
 
-		useSandbox( sandbox => {
-			connection = {
-				sendLog: sandbox.stub(),
-				sendEvent: sandbox.stub(),
-			};
+		beforeEach( () => {
+			dispatch = spy();
 		} );
 
 		test( 'should ignore non-tracks analytics recordings', () => {
@@ -357,10 +332,9 @@ describe( 'middleware', () => {
 				{ type: ANALYTICS_EVENT_RECORD, payload: { service: 'fb' } },
 				{ type: ANALYTICS_EVENT_RECORD, payload: { service: 'adwords' } },
 			];
-			sendAnalyticsLogEvent( connection, { meta: { analytics: analyticsMeta } } );
+			sendAnalyticsLogEvent( dispatch, { meta: { analytics: analyticsMeta } } );
 
-			expect( connection.sendLog ).not.to.have.been.called;
-			expect( connection.sendEvent ).not.to.have.been.called;
+			expect( dispatch ).not.to.have.been.called;
 		} );
 
 		test( 'should send log events for all listed tracks events', () => {
@@ -370,11 +344,11 @@ describe( 'middleware', () => {
 				{ type: ANALYTICS_EVENT_RECORD, payload: { service: 'adwords' } },
 				{ type: ANALYTICS_EVENT_RECORD, payload: { service: 'tracks', name: 'def' } },
 			];
-			sendAnalyticsLogEvent( connection, { meta: { analytics: analyticsMeta } } );
+			sendAnalyticsLogEvent( dispatch, { meta: { analytics: analyticsMeta } } );
 
-			expect( connection.sendLog.callCount ).to.equal( 2 );
-			expect( connection.sendLog ).to.have.been.calledWith( 'abc' );
-			expect( connection.sendLog ).to.have.been.calledWith( 'def' );
+			expect( dispatch.callCount ).to.equal( 2 );
+			expect( dispatch.getCall( 0 ).args[ 0 ].payload.text ).to.be.equals( 'abc' );
+			expect( dispatch.getCall( 1 ).args[ 0 ].payload.text ).to.be.equals( 'def' );
 		} );
 
 		test( 'should only send a timeline event for whitelisted tracks events', () => {
@@ -394,9 +368,15 @@ describe( 'middleware', () => {
 				},
 				{ type: ANALYTICS_EVENT_RECORD, payload: { service: 'tracks', name: 'def' } },
 			];
-			sendAnalyticsLogEvent( connection, { meta: { analytics: analyticsMeta } } );
+			sendAnalyticsLogEvent( dispatch, { meta: { analytics: analyticsMeta } } );
 
-			expect( connection.sendEvent.callCount ).to.equal( 2 );
+			expect( dispatch.callCount ).to.equal( 6 );
+			expect( dispatch.getCall( 0 ).args[ 0 ].type ).to.be.equal( HAPPYCHAT_IO_SEND_MESSAGE_EVENT );
+			expect( dispatch.getCall( 1 ).args[ 0 ].type ).to.be.equal( HAPPYCHAT_IO_SEND_MESSAGE_LOG );
+			expect( dispatch.getCall( 2 ).args[ 0 ].type ).to.be.equal( HAPPYCHAT_IO_SEND_MESSAGE_LOG );
+			expect( dispatch.getCall( 3 ).args[ 0 ].type ).to.be.equal( HAPPYCHAT_IO_SEND_MESSAGE_EVENT );
+			expect( dispatch.getCall( 4 ).args[ 0 ].type ).to.be.equal( HAPPYCHAT_IO_SEND_MESSAGE_LOG );
+			expect( dispatch.getCall( 5 ).args[ 0 ].type ).to.be.equal( HAPPYCHAT_IO_SEND_MESSAGE_LOG );
 		} );
 	} );
 
@@ -420,18 +400,12 @@ describe( 'middleware', () => {
 			},
 		} );
 
-		let connection, getState;
-
+		let dispatch, getState;
 		useSandbox( sandbox => {
-			connection = {
-				sendLog: sandbox.stub(),
-				sendEvent: sandbox.stub(),
-			};
-
 			getState = sandbox.stub();
 		} );
-
 		beforeEach( () => {
+			dispatch = spy();
 			getState.returns( assignedState );
 		} );
 
@@ -445,10 +419,9 @@ describe( 'middleware', () => {
 				},
 			};
 			getState.returns( unconnectedState );
-			sendActionLogsAndEvents( connection, { getState }, action );
+			sendActionLogsAndEvents( dispatch, { getState }, action );
 
-			expect( connection.sendLog ).not.to.have.been.called;
-			expect( connection.sendEvent ).not.to.have.been.called;
+			expect( dispatch ).not.to.have.been.called;
 		} );
 
 		test( 'should not send log events if the Happychat connection is unassigned', () => {
@@ -461,10 +434,9 @@ describe( 'middleware', () => {
 				},
 			};
 			getState.returns( unassignedState );
-			sendActionLogsAndEvents( connection, { getState }, action );
+			sendActionLogsAndEvents( dispatch, { getState }, action );
 
-			expect( connection.sendLog ).not.to.have.been.called;
-			expect( connection.sendEvent ).not.to.have.been.called;
+			expect( dispatch ).not.to.have.been.called;
 		} );
 
 		test( 'should send matching events when Happychat is connected and assigned', () => {
@@ -490,13 +462,19 @@ describe( 'middleware', () => {
 				},
 			};
 			getState.returns( assignedState );
-			sendActionLogsAndEvents( connection, { getState }, action );
+			sendActionLogsAndEvents( dispatch, { getState }, action );
 
 			// All 4 analytics records will be sent to the "firehose" log
-			expect( connection.sendLog.callCount ).to.equal( 4 );
 			// The two whitelisted analytics events and the HAPPYCHAT_BLUR action itself
 			// will be sent as customer events
-			expect( connection.sendEvent.callCount ).to.equal( 3 );
+			expect( dispatch.callCount ).to.equal( 7 );
+			expect( dispatch.getCall( 0 ).args[ 0 ].type ).to.be.equal( HAPPYCHAT_IO_SEND_MESSAGE_EVENT );
+			expect( dispatch.getCall( 1 ).args[ 0 ].type ).to.be.equal( HAPPYCHAT_IO_SEND_MESSAGE_LOG );
+			expect( dispatch.getCall( 2 ).args[ 0 ].type ).to.be.equal( HAPPYCHAT_IO_SEND_MESSAGE_LOG );
+			expect( dispatch.getCall( 3 ).args[ 0 ].type ).to.be.equal( HAPPYCHAT_IO_SEND_MESSAGE_EVENT );
+			expect( dispatch.getCall( 4 ).args[ 0 ].type ).to.be.equal( HAPPYCHAT_IO_SEND_MESSAGE_LOG );
+			expect( dispatch.getCall( 5 ).args[ 0 ].type ).to.be.equal( HAPPYCHAT_IO_SEND_MESSAGE_LOG );
+			expect( dispatch.getCall( 6 ).args[ 0 ].type ).to.be.equal( HAPPYCHAT_IO_SEND_MESSAGE_EVENT );
 		} );
 	} );
 } );
