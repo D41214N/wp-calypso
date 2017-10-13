@@ -14,9 +14,9 @@ import validator from 'is-my-json-valid';
 import {
 	SERIALIZE,
 	DESERIALIZE,
-	HAPPYCHAT_SEND_MESSAGE,
 	HAPPYCHAT_IO_RECEIVE_MESSAGE,
 	HAPPYCHAT_IO_RECEIVE_STATUS,
+	HAPPYCHAT_IO_SEND_MESSAGE_MESSAGE,
 	HAPPYCHAT_TRANSCRIPT_RECEIVE,
 } from 'state/action-types';
 import {
@@ -28,7 +28,7 @@ import { timelineSchema } from './schema';
 
 export const lastActivityTimestamp = ( state = null, action ) => {
 	switch ( action.type ) {
-		case HAPPYCHAT_SEND_MESSAGE:
+		case HAPPYCHAT_IO_SEND_MESSAGE_MESSAGE:
 		case HAPPYCHAT_IO_RECEIVE_MESSAGE:
 			return Date.now();
 	}
@@ -113,7 +113,7 @@ export const timeline = ( state = [], action ) => {
 			return [];
 		case HAPPYCHAT_IO_RECEIVE_MESSAGE:
 			// if meta.forOperator is set, skip so won't show to user
-			if ( get( action, 'event.meta.forOperator', false ) ) {
+			if ( get( action, 'message.meta.forOperator', false ) ) {
 				return state;
 			}
 			const event = timelineEvent( {}, action );

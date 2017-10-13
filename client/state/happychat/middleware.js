@@ -14,7 +14,7 @@ import {
 	HAPPYCHAT_CONNECT,
 	HAPPYCHAT_INITIALIZE,
 	HAPPYCHAT_IO_SEND_MESSAGE_USERINFO,
-	HAPPYCHAT_SEND_MESSAGE,
+	HAPPYCHAT_IO_SEND_MESSAGE_MESSAGE,
 	HAPPYCHAT_SET_CURRENT_MESSAGE,
 	HAPPYCHAT_TRANSCRIPT_REQUEST,
 	HELP_CONTACT_FORM_SITE_SELECT,
@@ -140,12 +140,6 @@ const onMessageChange = ( connection, message ) => {
 	} else {
 		sendTyping( connection, message );
 	}
-};
-
-const sendMessage = ( connection, message ) => {
-	debug( 'sending message', message );
-	connection.send( message );
-	connection.notTyping();
 };
 
 export const connectIfRecentlyActive = ( connection, store ) => {
@@ -285,11 +279,8 @@ export default function( connection = null ) {
 				break;
 
 			case HAPPYCHAT_IO_SEND_MESSAGE_USERINFO:
+			case HAPPYCHAT_IO_SEND_MESSAGE_MESSAGE:
 				connection.emit( action );
-				break;
-
-			case HAPPYCHAT_SEND_MESSAGE:
-				sendMessage( connection, action.message );
 				break;
 
 			case HAPPYCHAT_SET_CURRENT_MESSAGE:

@@ -23,7 +23,8 @@ import {
 	HAPPYCHAT_IO_RECEIVE_TOKEN,
 	HAPPYCHAT_IO_RECEIVE_UNAUTHORIZED,
 	HAPPYCHAT_IO_SEND_MESSAGE_USERINFO,
-	HAPPYCHAT_SEND_MESSAGE,
+	HAPPYCHAT_IO_SEND_MESSAGE_MESSAGE,
+	HAPPYCHAT_IO_SEND_TYPING,
 	HAPPYCHAT_TRANSCRIPT_RECEIVE,
 	HAPPYCHAT_TRANSCRIPT_REQUEST,
 } from 'state/action-types';
@@ -59,7 +60,18 @@ export const receiveAccept = isAvailable => ( {
 	isAvailable,
 } );
 
-export const sendChatMessage = message => ( { type: HAPPYCHAT_SEND_MESSAGE, message } );
+/**
+ * Returns an action object that sends the user message to happychat
+ *
+ * @param  { Object } message Message to be sent
+ * @return { Object } Action object
+ */
+export const sendChatMessage = message => ( {
+	type: HAPPYCHAT_IO_SEND_MESSAGE_MESSAGE,
+	event: 'message',
+	error: 'failed to send message',
+	payload: { id: uuid(), text: message },
+} );
 
 /**
  * Returns an action object that sends user information about the customer to happychat
@@ -80,6 +92,28 @@ export const sendUserInfo = info => ( {
 		},
 	},
 } );
+
+/**
+ * Returns an action object that sends typing event to happychat
+ *
+ * @param  { Object } message What the user is typing
+ * @return { Object } Action object
+ */
+export const sendTyping = message => ( {
+	type: HAPPYCHAT_IO_SEND_TYPING,
+	event: 'typing',
+	error: 'failed to send typing',
+	payload: {
+		message,
+	},
+} );
+
+/**
+ * Returns an action object that indicates that user stopped typing to happychat
+ *
+ * @return { Object } Action object
+ */
+export const sendNotTyping = () => sendTyping( false );
 
 export const receiveMessage = message => ( { type: HAPPYCHAT_IO_RECEIVE_MESSAGE, message } );
 

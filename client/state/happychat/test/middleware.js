@@ -6,7 +6,6 @@
 import { expect } from 'chai';
 import deepFreeze from 'deep-freeze';
 import { noop } from 'lodash';
-import moment from 'moment';
 import { spy, stub } from 'sinon';
 
 /**
@@ -33,8 +32,7 @@ import wpcom from 'lib/wp';
 import {
 	ANALYTICS_EVENT_RECORD,
 	HAPPYCHAT_BLUR,
-	HAPPYCHAT_IO_SEND_MESSAGE_USERINFO,
-	HAPPYCHAT_SEND_MESSAGE,
+	HAPPYCHAT_IO_SEND_MESSAGE_MESSAGE,
 	HAPPYCHAT_SET_CURRENT_MESSAGE,
 	HAPPYCHAT_TRANSCRIPT_RECEIVE,
 } from 'state/action-types';
@@ -177,16 +175,15 @@ describe( 'middleware', () => {
 		} );
 	} );
 
-	describe( 'HAPPYCHAT_SEND_MESSAGE action', () => {
+	describe( 'HAPPYCHAT_IO_SEND_MESSAGE_MESSAGE action', () => {
 		test( 'should send the message through the connection and send a notTyping signal', () => {
-			const action = { type: HAPPYCHAT_SEND_MESSAGE, message: 'Hello world' };
+			const action = { type: HAPPYCHAT_IO_SEND_MESSAGE_MESSAGE, message: 'Hello world' };
 			const connection = {
-				send: spy(),
+				emit: spy(),
 				notTyping: spy(),
 			};
 			middleware( connection )( { getState: noop } )( noop )( action );
-			expect( connection.send ).to.have.been.calledWith( action.message );
-			expect( connection.notTyping ).to.have.been.calledOnce;
+			expect( connection.emit ).to.have.been.calledWithMatch( action );
 		} );
 	} );
 

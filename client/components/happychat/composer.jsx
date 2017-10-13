@@ -14,7 +14,7 @@ import { localize } from 'i18n-calypso';
 /**
  * Internal dependencies
  */
-import { sendChatMessage } from 'state/happychat/connection/actions';
+import { sendChatMessage, sendNotTyping } from 'state/happychat/connection/actions';
 import { setCurrentMessage } from 'state/happychat/ui/actions';
 import getCurrentMessage from 'state/happychat/selectors/get-happychat-current-message';
 import { canUserSendMessages } from 'state/happychat/selectors';
@@ -48,10 +48,17 @@ export const Composer = createReactClass( {
 			message,
 			onFocus,
 			onSendChatMessage,
+			onSendNotTyping,
 			onUpdateChatMessage,
 			translate,
 		} = this.props;
-		const sendMessage = when( () => ! isEmpty( message ), () => onSendChatMessage( message ) );
+		const sendMessage = when(
+			() => ! isEmpty( message ),
+			() => {
+				onSendChatMessage( message );
+				onSendNotTyping( message );
+			}
+		);
 		const onChange = compose( prop( 'target.value' ), onUpdateChatMessage );
 		const onKeyDown = when( returnPressed, forEach( preventDefault, sendMessage ) );
 		const composerClasses = classNames( 'happychat__composer', {
@@ -97,6 +104,9 @@ const mapDispatch = dispatch => ( {
 	},
 	onSendChatMessage( message ) {
 		dispatch( sendChatMessage( message ) );
+	},
+	onSendNotTyping( message ) {
+		dispatch( sendNotTyping( message ) );
 	},
 } );
 

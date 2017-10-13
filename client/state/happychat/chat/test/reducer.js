@@ -12,7 +12,7 @@ import { lastActivityTimestamp } from '../reducer';
 import {
 	HAPPYCHAT_IO_RECEIVE_INIT,
 	HAPPYCHAT_IO_RECEIVE_MESSAGE,
-	HAPPYCHAT_SEND_MESSAGE,
+	HAPPYCHAT_IO_SEND_MESSAGE_MESSAGE,
 } from 'state/action-types';
 
 // Simulate the time Feb 27, 2017 05:25 UTC
@@ -36,7 +36,7 @@ describe( 'reducers', () => {
 			} );
 			expect( result ).to.equal( NOW );
 
-			result = lastActivityTimestamp( null, { type: HAPPYCHAT_SEND_MESSAGE } );
+			result = lastActivityTimestamp( null, { type: HAPPYCHAT_IO_SEND_MESSAGE_MESSAGE } );
 			expect( result ).to.equal( NOW );
 		} );
 
