@@ -16,7 +16,7 @@ import {
 	DESERIALIZE,
 	HAPPYCHAT_SEND_MESSAGE,
 	HAPPYCHAT_IO_RECEIVE_MESSAGE,
-	HAPPYCHAT_SET_CHAT_STATUS,
+	HAPPYCHAT_IO_RECEIVE_STATUS,
 	HAPPYCHAT_TRANSCRIPT_RECEIVE,
 } from 'state/action-types';
 import {
@@ -54,7 +54,7 @@ lastActivityTimestamp.schema = { type: 'number' };
  */
 export const status = ( state = HAPPYCHAT_CHAT_STATUS_DEFAULT, action ) => {
 	switch ( action.type ) {
-		case HAPPYCHAT_SET_CHAT_STATUS:
+		case HAPPYCHAT_IO_RECEIVE_STATUS:
 			return action.status;
 	}
 	return state;
