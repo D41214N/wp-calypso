@@ -1,8 +1,14 @@
 /** @format **/
 
 /**
+ * External dependencies
+ */
+import { v4 as uuid } from 'uuid';
+
+/**
  * Internal dependencies
  */
+import { HAPPYCHAT_MESSAGE_TYPES } from 'state/happychat/constants';
 import {
 	HAPPYCHAT_CONNECT,
 	HAPPYCHAT_INITIALIZE,
@@ -16,8 +22,8 @@ import {
 	HAPPYCHAT_IO_RECEIVE_RECONNECTING,
 	HAPPYCHAT_IO_RECEIVE_TOKEN,
 	HAPPYCHAT_IO_RECEIVE_UNAUTHORIZED,
+	HAPPYCHAT_IO_SEND_MESSAGE_USERINFO,
 	HAPPYCHAT_SEND_MESSAGE,
-	HAPPYCHAT_SEND_USER_INFO,
 	HAPPYCHAT_TRANSCRIPT_RECEIVE,
 	HAPPYCHAT_TRANSCRIPT_REQUEST,
 } from 'state/action-types';
@@ -56,21 +62,24 @@ export const receiveAccept = isAvailable => ( {
 export const sendChatMessage = message => ( { type: HAPPYCHAT_SEND_MESSAGE, message } );
 
 /**
- * Returns an action object that sends information about the customer to happychat
+ * Returns an action object that sends user information about the customer to happychat
  *
- * @param  { String } howCanWeHelp Selected value of `How can we help?` form input
- * @param  { String } howYouFeel Selected value of `Mind sharing how you feel?` form input
- * @param  { Object } site Selected site info
+ * @param  { Object } info Selected user info
  * @return { Object } Action object
  */
-export const sendUserInfo = ( howCanWeHelp, howYouFeel, site ) => {
-	return {
-		type: HAPPYCHAT_SEND_USER_INFO,
-		howCanWeHelp,
-		howYouFeel,
-		site,
-	};
-};
+export const sendUserInfo = info => ( {
+	type: HAPPYCHAT_IO_SEND_MESSAGE_USERINFO,
+	event: 'message',
+	error: 'failed to send message',
+	payload: {
+		type: HAPPYCHAT_MESSAGE_TYPES.CUSTOMER_INFO,
+		id: uuid(),
+		meta: {
+			forOperator: true,
+			...info,
+		},
+	},
+} );
 
 export const receiveMessage = message => ( { type: HAPPYCHAT_IO_RECEIVE_MESSAGE, message } );
 

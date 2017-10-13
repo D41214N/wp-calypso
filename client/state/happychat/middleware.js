@@ -1,10 +1,7 @@
+/** @format */
 /**
  * External dependencies
- *
- * @format
  */
-
-import moment from 'moment';
 import { has, isEmpty, throttle } from 'lodash';
 
 /**
@@ -16,7 +13,7 @@ import {
 	ANALYTICS_EVENT_RECORD,
 	HAPPYCHAT_CONNECT,
 	HAPPYCHAT_INITIALIZE,
-	HAPPYCHAT_SEND_USER_INFO,
+	HAPPYCHAT_IO_SEND_MESSAGE_USERINFO,
 	HAPPYCHAT_SEND_MESSAGE,
 	HAPPYCHAT_SET_CURRENT_MESSAGE,
 	HAPPYCHAT_TRANSCRIPT_REQUEST,
@@ -41,7 +38,6 @@ import {
 } from 'state/action-types';
 import { receiveChatTranscript } from './connection/actions';
 import { getGroups } from './selectors';
-import getGeoLocation from 'state/happychat/selectors/get-geolocation';
 import isHappychatChatAssigned from 'state/happychat/selectors/is-happychat-chat-assigned';
 import isHappychatClientConnected from 'state/happychat/selectors/is-happychat-client-connected';
 import isHappychatConnectionUninitialized from 'state/happychat/selectors/is-happychat-connection-uninitialized';
@@ -150,48 +146,6 @@ const sendMessage = ( connection, message ) => {
 	debug( 'sending message', message );
 	connection.send( message );
 	connection.notTyping();
-};
-
-export const sendInfo = ( connection, { getState }, action ) => {
-	const { howCanWeHelp, howYouFeel, site } = action;
-	const info = {
-		howCanWeHelp,
-		howYouFeel,
-		siteId: site.ID,
-		siteUrl: site.URL,
-		localDateTime: moment().format( 'h:mm a, MMMM Do YYYY' ),
-	};
-
-	// add screen size
-	if ( 'object' === typeof screen ) {
-		info.screenSize = {
-			width: screen.width,
-			height: screen.height,
-		};
-	}
-
-	// add browser size
-	if ( 'object' === typeof window ) {
-		info.browserSize = {
-			width: window.innerWidth,
-			height: window.innerHeight,
-		};
-	}
-
-	// add user agent
-	if ( 'object' === typeof navigator ) {
-		info.userAgent = navigator.userAgent;
-	}
-
-	//  add geo location
-	const state = getState();
-	const geoLocation = getGeoLocation( state );
-	if ( geoLocation ) {
-		info.geoLocation = geoLocation;
-	}
-
-	debug( 'sending info message', info );
-	connection.sendInfo( info );
 };
 
 export const connectIfRecentlyActive = ( connection, store ) => {
@@ -330,8 +284,8 @@ export default function( connection = null ) {
 				updateChatPreferences( connection, store, action.siteId );
 				break;
 
-			case HAPPYCHAT_SEND_USER_INFO:
-				sendInfo( connection, store, action );
+			case HAPPYCHAT_IO_SEND_MESSAGE_USERINFO:
+				connection.emit( action );
 				break;
 
 			case HAPPYCHAT_SEND_MESSAGE:

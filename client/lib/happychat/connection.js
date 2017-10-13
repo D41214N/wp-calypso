@@ -76,7 +76,7 @@ class Connection {
 	emit( action ) {
 		this.openSocket.then(
 			socket => socket.emit( action.event, action.payload ),
-			e => this.dispatch( receiveError( e ) )
+			e => this.dispatch( receiveError( action.error || '' + e ) )
 		);
 	}
 
@@ -134,22 +134,6 @@ class Connection {
 					id: uuid(),
 					type: HAPPYCHAT_MESSAGE_TYPES.LOG,
 					meta: { forOperator: true, event_type: HAPPYCHAT_MESSAGE_TYPES.LOG },
-				} ),
-			e => debug( 'failed to send message', e )
-		);
-	}
-
-	/**
-	 * Send customer and browser information
-	 * @param { Object } info selected form fields, customer date time, user agent and browser info
-	 */
-	sendInfo( info ) {
-		this.openSocket.then(
-			socket =>
-				socket.emit( 'message', {
-					id: uuid(),
-					meta: { ...info, forOperator: true },
-					type: HAPPYCHAT_MESSAGE_TYPES.CUSTOMER_INFO,
 				} ),
 			e => debug( 'failed to send message', e )
 		);
