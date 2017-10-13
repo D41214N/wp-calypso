@@ -80,13 +80,6 @@ class Connection {
 		);
 	}
 
-	typing( message ) {
-		this.openSocket.then(
-			socket => socket.emit( 'typing', { message } ),
-			e => debug( 'failed to send typing', e )
-		);
-	}
-
 	sendEvent( message ) {
 		this.openSocket.then(
 			socket =>
@@ -97,18 +90,6 @@ class Connection {
 					meta: { forOperator: true, event_type: HAPPYCHAT_MESSAGE_TYPES.CUSTOMER_EVENT },
 				} ),
 			e => debug( 'failed to send message', e )
-		);
-	}
-
-	/**
-	 * Update chat preferences (locale and groups)
-	 * @param {string} locale representing the user selected locale
-	 * @param {array} groups of string happychat groups (wp.com, jpop) based on the site selected
-	 */
-	setPreferences( locale, groups ) {
-		this.openSocket.then(
-			socket => socket.emit( 'preferences', { locale, groups } ),
-			e => debug( 'failed to send preferences', e )
 		);
 	}
 

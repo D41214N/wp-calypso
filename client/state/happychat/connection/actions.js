@@ -24,6 +24,7 @@ import {
 	HAPPYCHAT_IO_RECEIVE_UNAUTHORIZED,
 	HAPPYCHAT_IO_SEND_MESSAGE_USERINFO,
 	HAPPYCHAT_IO_SEND_MESSAGE_MESSAGE,
+	HAPPYCHAT_IO_SEND_PREFERENCES,
 	HAPPYCHAT_IO_SEND_TYPING,
 	HAPPYCHAT_TRANSCRIPT_RECEIVE,
 	HAPPYCHAT_TRANSCRIPT_REQUEST,
@@ -114,6 +115,23 @@ export const sendTyping = message => ( {
  * @return { Object } Action object
  */
 export const sendNotTyping = () => sendTyping( false );
+
+/**
+ * Returns an action object that send user routing preferences (locale and groups) to happychat.
+ *
+ * @param { String } locale representing the user selected locale
+ * @param { Array } groups of string happychat groups (wp.com, jpop) based on the site selected
+ * @return { Object } Action object
+ */
+export const sendPreferences = ( locale, groups ) => ( {
+	type: HAPPYCHAT_IO_SEND_PREFERENCES,
+	event: 'preferences',
+	error: 'failed to send preferences',
+	payload: {
+		locale,
+		groups,
+	},
+} );
 
 export const receiveMessage = message => ( { type: HAPPYCHAT_IO_RECEIVE_MESSAGE, message } );
 

@@ -2,7 +2,7 @@
 /**
  * External dependencies
  */
-import { has, isEmpty, throttle } from 'lodash';
+import { has, isEmpty, noop, throttle } from 'lodash';
 
 /**
  * Internal dependencies
@@ -15,6 +15,8 @@ import {
 	HAPPYCHAT_INITIALIZE,
 	HAPPYCHAT_IO_SEND_MESSAGE_USERINFO,
 	HAPPYCHAT_IO_SEND_MESSAGE_MESSAGE,
+	HAPPYCHAT_IO_SEND_PREFERENCES,
+	HAPPYCHAT_IO_SEND_TYPING,
 	HAPPYCHAT_SET_CURRENT_MESSAGE,
 	HAPPYCHAT_TRANSCRIPT_REQUEST,
 	HELP_CONTACT_FORM_SITE_SELECT,
@@ -36,7 +38,12 @@ import {
 	PURCHASE_REMOVE_COMPLETED,
 	SITE_SETTINGS_SAVE_SUCCESS,
 } from 'state/action-types';
-import { receiveChatTranscript } from './connection/actions';
+import {
+	receiveChatTranscript,
+	sendPreferences,
+	sendTyping,
+	sendNotTyping,
+} from './connection/actions';
 import { getGroups } from './selectors';
 import isHappychatChatAssigned from 'state/happychat/selectors/is-happychat-chat-assigned';
 import isHappychatClientConnected from 'state/happychat/selectors/is-happychat-client-connected';
@@ -47,9 +54,9 @@ import { getHelpSelectedSite } from 'state/help/selectors';
 import debugFactory from 'debug';
 const debug = debugFactory( 'calypso:happychat:actions' );
 
-const sendTyping = throttle(
-	( connection, message ) => {
-		connection.typing( message );
+const sendThrottledTyping = throttle(
+	( dispatch, message ) => {
+		dispatch( sendTyping( message ) );
 	},
 	1000,
 	{ leading: true, trailing: false }
@@ -78,17 +85,6 @@ const startSession = () =>
 		method: 'POST',
 		path: '/happychat/session',
 	} );
-
-export const updateChatPreferences = ( connection, { getState }, siteId ) => {
-	const state = getState();
-
-	if ( isHappychatClientConnected( state ) ) {
-		const locale = getCurrentUserLocale( state );
-		const groups = getGroups( state, siteId );
-
-		connection.setPreferences( locale, groups );
-	}
-};
 
 export const connectChat = ( connection, { getState, dispatch } ) => {
 	const state = getState();
@@ -132,14 +128,6 @@ export const requestTranscript = ( connection, { dispatch } ) => {
 			result => dispatch( receiveChatTranscript( result.messages, result.timestamp ) ),
 			e => debug( 'failed to get transcript', e )
 		);
-};
-
-const onMessageChange = ( connection, message ) => {
-	if ( isEmpty( message ) ) {
-		connection.notTyping();
-	} else {
-		sendTyping( connection, message );
-	}
 };
 
 export const connectIfRecentlyActive = ( connection, store ) => {
@@ -274,17 +262,29 @@ export default function( connection = null ) {
 				connectIfRecentlyActive( connection, store );
 				break;
 
+			// Converts Calypso action => SocketIO action
 			case HELP_CONTACT_FORM_SITE_SELECT:
-				updateChatPreferences( connection, store, action.siteId );
+				const state = store.getState();
+				isHappychatClientConnected( state )
+					? store.dispatch(
+							sendPreferences( getCurrentUserLocale( state ), getGroups( state, action.siteId ) )
+						)
+					: noop;
 				break;
 
 			case HAPPYCHAT_IO_SEND_MESSAGE_USERINFO:
 			case HAPPYCHAT_IO_SEND_MESSAGE_MESSAGE:
+			case HAPPYCHAT_IO_SEND_TYPING:
+			case HAPPYCHAT_IO_SEND_PREFERENCES:
 				connection.emit( action );
 				break;
 
+			// Converts Happychat UI action => SocketIO action
 			case HAPPYCHAT_SET_CURRENT_MESSAGE:
-				onMessageChange( connection, action.message );
+				const { message } = action;
+				isEmpty( message )
+					? store.dispatch( sendNotTyping() )
+					: sendThrottledTyping( store.dispatch, message );
 				break;
 
 			case HAPPYCHAT_TRANSCRIPT_REQUEST:

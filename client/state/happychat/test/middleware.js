@@ -18,7 +18,6 @@ import middleware, {
 	sendActionLogsAndEvents,
 	sendAnalyticsLogEvent,
 	sendRouteSetEventMessage,
-	updateChatPreferences,
 } from '../middleware';
 import {
 	HAPPYCHAT_CHAT_STATUS_ASSIGNED,
@@ -35,8 +34,12 @@ import {
 	HAPPYCHAT_IO_SEND_MESSAGE_MESSAGE,
 	HAPPYCHAT_SET_CURRENT_MESSAGE,
 	HAPPYCHAT_TRANSCRIPT_RECEIVE,
+	HELP_CONTACT_FORM_SITE_SELECT,
 } from 'state/action-types';
 import { useSandbox } from 'test/helpers/use-sinon';
+import { sendTyping, sendNotTyping, sendPreferences } from 'state/happychat/connection/actions';
+import { getCurrentUserLocale } from 'state/current-user/selectors';
+import { getGroups } from 'state/happychat/selectors';
 
 describe( 'middleware', () => {
 	describe( 'HAPPYCHAT_CONNECT action', () => {
@@ -190,15 +193,16 @@ describe( 'middleware', () => {
 	describe( 'HAPPYCHAT_SET_CURRENT_MESSAGE action', () => {
 		test( 'should send the connection a typing signal when a message is present', () => {
 			const action = { type: HAPPYCHAT_SET_CURRENT_MESSAGE, message: 'Hello world' };
-			const connection = { typing: spy() };
-			middleware( connection )( { getState: noop } )( noop )( action );
-			expect( connection.typing ).to.have.been.calledWith( action.message );
+			const dispatch = spy();
+			middleware( noop )( { getState: noop, dispatch } )( noop )( action );
+			expect( dispatch ).to.have.been.calledWithMatch( sendTyping( action.message ) );
 		} );
+
 		test( 'should send the connection a notTyping signal when the message is blank', () => {
 			const action = { type: HAPPYCHAT_SET_CURRENT_MESSAGE, message: '' };
-			const connection = { notTyping: spy() };
-			middleware( connection )( { getState: noop } )( noop )( action );
-			expect( connection.notTyping ).to.have.been.calledOnce;
+			const dispatch = spy();
+			middleware( noop )( { getState: noop, dispatch } )( noop )( action );
+			expect( dispatch ).to.have.been.calledWithMatch( sendNotTyping() );
 		} );
 	} );
 
@@ -250,12 +254,16 @@ describe( 'middleware', () => {
 					},
 				},
 			};
-			const getState = () => state;
-			const connection = {
-				setPreferences: stub(),
+			const action = {
+				type: HELP_CONTACT_FORM_SITE_SELECT,
+				siteId: 1,
 			};
-			updateChatPreferences( connection, { getState }, 1 );
-			expect( connection.setPreferences ).to.have.been.called;
+			const getState = () => state;
+			const dispatch = spy();
+			middleware( noop )( { getState, dispatch } )( noop )( action );
+			expect( dispatch ).to.have.been.calledWithMatch(
+				sendPreferences( getCurrentUserLocale( state ), getGroups( state, action.siteId ) )
+			);
 		} );
 
 		test( 'should not send the locale and groups if there is no happychat connection', () => {
@@ -270,12 +278,14 @@ describe( 'middleware', () => {
 					},
 				},
 			};
-			const getState = () => state;
-			const connection = {
-				setPreferences: stub(),
+			const action = {
+				type: HELP_CONTACT_FORM_SITE_SELECT,
+				siteId: 1,
 			};
-			updateChatPreferences( connection, { getState }, 1 );
-			expect( connection.setPreferences ).to.have.not.been.called;
+			const getState = () => state;
+			const dispatch = spy();
+			middleware( noop )( { getState, dispatch } )( noop )( action );
+			expect( dispatch ).to.not.have.been.called;
 		} );
 	} );
 
