@@ -13,7 +13,6 @@ import { EventEmitter } from 'events';
  * Internal dependencies
  */
 import {
-	HAPPYCHAT_IO_INIT,
 	HAPPYCHAT_IO_RECEIVE_ACCEPT,
 	HAPPYCHAT_IO_RECEIVE_DISCONNECT,
 	HAPPYCHAT_IO_RECEIVE_INIT,
@@ -26,7 +25,7 @@ import {
 import buildConnection from '../connection';
 
 describe( 'connection', () => {
-	describe( 'should bind socket ', () => {
+	describe( 'should bind socket upon config promise resolution', () => {
 		const signer_user_id = 12;
 		const jwt = 'jwt';
 		const locale = 'locale';
@@ -38,13 +37,17 @@ describe( 'connection', () => {
 			socket = new EventEmitter();
 			dispatch = stub();
 			const connection = buildConnection();
-			openSocket = connection.init( socket, dispatch, {
-				signer_user_id,
-				jwt,
-				locale,
-				groups,
-				geoLocation,
+			const config = Promise.resolve( {
+				url: socket,
+				user: {
+					signer_user_id,
+					jwt,
+					locale,
+					groups,
+					geoLocation,
+				},
 			} );
+			openSocket = connection.init( dispatch, config );
 		} );
 
 		it( 'connect event', done => {
@@ -69,12 +72,11 @@ describe( 'connection', () => {
 
 		it( 'init event', done => {
 			openSocket.then( () => {
-				expect( dispatch.getCall( 0 ) ).to.have.been.calledWithMatch( { type: HAPPYCHAT_IO_INIT } );
-				expect( dispatch.getCall( 1 ) ).to.have.been.calledWithMatch( {
+				expect( dispatch.getCall( 0 ) ).to.have.been.calledWithMatch( {
 					type: HAPPYCHAT_IO_RECEIVE_INIT,
 					user: { signer_user_id, locale, groups, geoLocation },
 				} );
-				expect( dispatch.getCall( 2 ) ).to.have.been.calledWithMatch( {
+				expect( dispatch.getCall( 1 ) ).to.have.been.calledWithMatch( {
 					type: HAPPYCHAT_IO_REQUEST_TRANSCRIPT,
 				} );
 				done(); // tell mocha the promise chain ended
@@ -95,7 +97,7 @@ describe( 'connection', () => {
 		it( 'disconnect event', done => {
 			const errorStatus = 'testing reasons';
 			openSocket.then( () => {
-				expect( dispatch.getCall( 3 ) ).to.have.been.calledWithMatch( {
+				expect( dispatch.getCall( 2 ) ).to.have.been.calledWithMatch( {
 					type: HAPPYCHAT_IO_RECEIVE_DISCONNECT,
 					errorStatus,
 				} );
@@ -107,7 +109,7 @@ describe( 'connection', () => {
 
 		it( 'reconnecting event', done => {
 			openSocket.then( () => {
-				expect( dispatch.getCall( 3 ) ).to.have.been.calledWithMatch( {
+				expect( dispatch.getCall( 2 ) ).to.have.been.calledWithMatch( {
 					type: HAPPYCHAT_IO_RECEIVE_RECONNECTING,
 				} );
 				done(); // tell mocha the promise chain ended
@@ -119,7 +121,7 @@ describe( 'connection', () => {
 		it( 'status event', done => {
 			const status = 'testing status';
 			openSocket.then( () => {
-				expect( dispatch.getCall( 3 ) ).to.have.been.calledWithMatch( {
+				expect( dispatch.getCall( 2 ) ).to.have.been.calledWithMatch( {
 					type: HAPPYCHAT_IO_RECEIVE_STATUS,
 					status,
 				} );
@@ -132,7 +134,7 @@ describe( 'connection', () => {
 		it( 'accept event', done => {
 			const isAvailable = true;
 			openSocket.then( () => {
-				expect( dispatch.getCall( 3 ) ).to.have.been.calledWithMatch( {
+				expect( dispatch.getCall( 2 ) ).to.have.been.calledWithMatch( {
 					type: HAPPYCHAT_IO_RECEIVE_ACCEPT,
 					isAvailable,
 				} );
@@ -145,7 +147,7 @@ describe( 'connection', () => {
 		it( 'message event', done => {
 			const message = 'testing msg';
 			openSocket.then( () => {
-				expect( dispatch.getCall( 3 ) ).to.have.been.calledWithMatch( {
+				expect( dispatch.getCall( 2 ) ).to.have.been.calledWithMatch( {
 					type: HAPPYCHAT_IO_RECEIVE_MESSAGE,
 					message,
 				} );
