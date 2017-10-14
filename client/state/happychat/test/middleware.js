@@ -254,7 +254,7 @@ describe( 'middleware', () => {
 				},
 			};
 			getState.returns( unconnectedState );
-			sendActionLogsAndEvents( dispatch, { getState }, action );
+			sendActionLogsAndEvents( { dispatch, getState }, action );
 
 			expect( dispatch ).not.to.have.been.called;
 		} );
@@ -269,7 +269,7 @@ describe( 'middleware', () => {
 				},
 			};
 			getState.returns( unassignedState );
-			sendActionLogsAndEvents( dispatch, { getState }, action );
+			sendActionLogsAndEvents( { dispatch, getState }, action );
 
 			expect( dispatch ).not.to.have.been.called;
 		} );
@@ -297,7 +297,7 @@ describe( 'middleware', () => {
 				},
 			};
 			getState.returns( assignedState );
-			sendActionLogsAndEvents( dispatch, { getState }, action );
+			sendActionLogsAndEvents( { dispatch, getState }, action );
 
 			// All 4 analytics records will be sent to the "firehose" log
 			// The two whitelisted analytics events and the HAPPYCHAT_BLUR action itself

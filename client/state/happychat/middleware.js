@@ -17,7 +17,6 @@ import {
 	HAPPYCHAT_IO_SEND_MESSAGE_USERINFO,
 	HAPPYCHAT_IO_SEND_PREFERENCES,
 	HAPPYCHAT_IO_SEND_TYPING,
-	HAPPYCHAT_SET_CURRENT_MESSAGE,
 	HELP_CONTACT_FORM_SITE_SELECT,
 	ROUTE_SET,
 	COMMENTS_CHANGE_STATUS,
@@ -37,18 +36,10 @@ import {
 	PURCHASE_REMOVE_COMPLETED,
 	SITE_SETTINGS_SAVE_SUCCESS,
 } from 'state/action-types';
-import {
-	sendEvent,
-	sendLog,
-	sendPreferences,
-	sendTyping,
-	sendNotTyping,
-} from './connection/actions';
+import { sendEvent, sendLog, sendPreferences } from './connection/actions';
 import { getGroups } from './selectors';
 import isHappychatChatAssigned from 'state/happychat/selectors/is-happychat-chat-assigned';
 import isHappychatClientConnected from 'state/happychat/selectors/is-happychat-client-connected';
-import isHappychatConnectionUninitialized from 'state/happychat/selectors/is-happychat-connection-uninitialized';
-import wasHappychatRecentlyActive from 'state/happychat/selectors/was-happychat-recently-active';
 import { getCurrentUser, getCurrentUserLocale } from 'state/current-user/selectors';
 
 export const getEventMessageFromActionData = action => {
@@ -125,7 +116,7 @@ export const sendAnalyticsLogEvent = ( dispatch, { meta: { analytics: analyticsM
 	} );
 };
 
-export const sendActionLogsAndEvents = ( dispatch, { getState }, action ) => {
+export const sendActionLogsAndEvents = ( { dispatch, getState }, action ) => {
 	const state = getState();
 
 	// If there's not an active Happychat session, do nothing
@@ -160,7 +151,7 @@ export default function( connection = null ) {
 
 	return store => next => action => {
 		// Send any relevant log/event data from this action to Happychat
-		sendActionLogsAndEvents( store.dispatch, store, action );
+		sendActionLogsAndEvents( store, action );
 
 		const state = store.getState();
 
