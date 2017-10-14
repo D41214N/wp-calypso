@@ -95,16 +95,16 @@ describe( 'connection', () => {
 		} );
 
 		it( 'disconnect event', done => {
-			const errorStatus = 'testing reasons';
+			const error = 'testing reasons';
 			openSocket.then( () => {
 				expect( dispatch.getCall( 2 ) ).to.have.been.calledWithMatch( {
 					type: HAPPYCHAT_IO_RECEIVE_DISCONNECT,
-					errorStatus,
+					error,
 				} );
 				done(); // tell mocha the promise chain ended
 			} );
 			socket.emit( 'init' ); // force openSocket promise to resolve
-			socket.emit( 'disconnect', errorStatus );
+			socket.emit( 'disconnect', error );
 		} );
 
 		it( 'reconnecting event', done => {
