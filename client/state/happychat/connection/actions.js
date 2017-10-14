@@ -18,6 +18,7 @@ import {
 	HAPPYCHAT_IO_RECEIVE_INIT,
 	HAPPYCHAT_IO_RECEIVE_MESSAGE,
 	HAPPYCHAT_IO_RECEIVE_RECONNECTING,
+	HAPPYCHAT_IO_RECEIVE_STATUS,
 	HAPPYCHAT_IO_RECEIVE_TOKEN,
 	HAPPYCHAT_IO_RECEIVE_UNAUTHORIZED,
 	HAPPYCHAT_IO_REQUEST_TRANSCRIPT,
@@ -116,6 +117,18 @@ export const receiveAccept = isAvailable => ( {
  * @return { Object } Action object
  */
 export const receiveMessage = message => ( { type: HAPPYCHAT_IO_RECEIVE_MESSAGE, message } );
+
+/**
+ * Returns an action object for the status event,
+ * as it was received from Happychat.
+ *
+ * @param  { String } status New chat status
+ * @return { Object } Action object
+ */
+export const receiveStatus = status => ( {
+	type: HAPPYCHAT_IO_RECEIVE_STATUS,
+	status,
+} );
 
 /**
  * Returns an action object with the error received from Happychat

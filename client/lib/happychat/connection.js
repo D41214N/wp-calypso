@@ -17,12 +17,12 @@ import {
 	receiveError,
 	receiveInit,
 	receiveMessage,
+	receiveReconnecting,
+	receiveStatus,
 	receiveToken,
 	receiveUnauthorized,
 	requestChatTranscript,
-	receiveReconnecting,
 } from 'state/happychat/connection/actions';
-import { receiveStatus } from 'state/happychat/chat/actions';
 
 const debug = require( 'debug' )( 'calypso:happychat:connection' );
 
