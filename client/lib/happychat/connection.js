@@ -1,9 +1,8 @@
+/** @format */
+
 /**
  * External dependencies
- *
- * @format
  */
-
 import IO from 'socket.io-client';
 import { isString } from 'lodash';
 
@@ -33,11 +32,12 @@ const buildConnection = socket =>
 
 class Connection {
 	/**
-	 * Init the SockeIO connection (bind events, etc)
+	 * Init the SockeIO connection: check user authorization and bind socket events
 	 *
 	 * @param  { Function } dispatch Redux dispatch function
 	 * @param  { Promise } config   Will give us the user info
-	 * @return { Promise }          Resolved promise (an opened socket) or rejected
+	 * @return { Promise } A promise to be resolved (returns the internal opened socket)
+	 *                   	 or rejected (by the config promise or the auth socket itself)
 	 */
 	init( dispatch, config ) {
 		if ( this.openSocket ) {
@@ -46,14 +46,10 @@ class Connection {
 		}
 		this.dispatch = dispatch;
 
-		// By not catching the config promise, we expose a better API to init:
-		// - either we return a resolve promise (the openSocket)
-		// - or a rejected promise
 		return config.then( ( { url, user: { signer_user_id, jwt, locale, groups, geoLocation } } ) => {
 			const socket = buildConnection( url );
 
 			this.openSocket = new Promise( ( resolve, reject ) => {
-				// TODO: reject this promise
 				socket
 					.once( 'connect', () => dispatch( receiveConnect() ) )
 					.on( 'token', handler => {
@@ -76,18 +72,24 @@ class Connection {
 					.on( 'accept', accept => dispatch( receiveAccept( accept ) ) )
 					.on( 'message', message => dispatch( receiveMessage( message ) ) );
 			} );
-			return this.openSocket;
 		} );
 	}
 
 	/**
 	 * Given a Redux action, emits a SocketIO event.
 	 *
-	 * @param  { Object } action Redux action with {event, payload, error} props
-	 * @return { Object } A socket promise
+	 * @param  { Object } action A Redux action with props
+	 *                    {
+	 *                  		event: SocketIO event name,
+	 *                  	  payload: contents to be sent,
+	 *                  	  error: message to be shown should the event fails to be sent,
+	 *                  	}
 	 */
 	send( action ) {
-		return this.openSocket.then(
+		if ( ! this.openSocket ) {
+			return;
+		}
+		this.openSocket.then(
 			socket => socket.emit( action.event, action.payload ),
 			e => this.dispatch( receiveError( action.error || '' + e ) )
 		);
@@ -95,17 +97,26 @@ class Connection {
 
 	/**
 	 * Given a Redux action and a timeout, emits a SocketIO event that request
-	 * some info to server as a Promise. Upon resolution of that request promise
+	 * some info to server as a Promise. Upon resolution of that request promise,
 	 * the action.callback will be dispatched (it should be a Redux action creator).
-	 * If server response takes more than timeout,
-	 * the action.callbackTimeout will be dispatched instead.
+	 * If server response takes more than timeout, the action.callbackTimeout
+	 * will be dispatched instead.
 	 *
-	 * @param  { Object } action Redux action with {event, payload, error} props
+	 * @param  { Object } action A Redux action with props
+	 *                  	{
+	 *                  		event: SocketIO event name,
+	 *                  		payload: contents to be sent,
+	 *                  		error: message to be shown should the event fails to be sent,
+	 *                  		callback: a Redux action creator,
+	 *                  		callbackTimeout: a Redux action creator,
+	 *                  	}
 	 * @param  { Number } timeout How long (in milliseconds) has the server to respond
-	 * @return { Object } A socket promise
 	 */
 	request( action, timeout ) {
-		return this.openSocket.then( socket =>
+		if ( ! this.openSocket ) {
+			return;
+		}
+		this.openSocket.then( socket =>
 			Promise.race( [
 				new Promise( ( resolve, reject ) => {
 					socket.emit( action.event, action.payload, ( e, result ) => {
