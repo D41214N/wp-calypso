@@ -2,7 +2,7 @@
 /**
  * External dependencies
  */
-import { has, isEmpty, noop, throttle } from 'lodash';
+import { has, noop } from 'lodash';
 
 /**
  * Internal dependencies
@@ -50,14 +50,6 @@ import isHappychatClientConnected from 'state/happychat/selectors/is-happychat-c
 import isHappychatConnectionUninitialized from 'state/happychat/selectors/is-happychat-connection-uninitialized';
 import wasHappychatRecentlyActive from 'state/happychat/selectors/was-happychat-recently-active';
 import { getCurrentUser, getCurrentUserLocale } from 'state/current-user/selectors';
-
-const sendThrottledTyping = throttle(
-	( dispatch, message ) => {
-		dispatch( sendTyping( message ) );
-	},
-	1000,
-	{ leading: true, trailing: false }
-);
 
 export const getEventMessageFromActionData = action => {
 	// Below we've stubbed in the actions we think we'll care about, so that we can
@@ -188,14 +180,6 @@ export default function( connection = null ) {
 
 			case HAPPYCHAT_IO_REQUEST_TRANSCRIPT:
 				connection.request( action, 10000 );
-				break;
-
-			// Converts Happychat UI action => SocketIO action
-			case HAPPYCHAT_SET_CURRENT_MESSAGE:
-				const { message } = action;
-				isEmpty( message )
-					? store.dispatch( sendNotTyping() )
-					: sendThrottledTyping( store.dispatch, message );
 				break;
 
 			// Converts Calypso action => SocketIO action

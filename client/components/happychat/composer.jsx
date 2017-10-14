@@ -8,14 +8,13 @@ import React from 'react';
 import createReactClass from 'create-react-class';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
-import { isEmpty } from 'lodash';
+import { isEmpty, throttle } from 'lodash';
 import { localize } from 'i18n-calypso';
 
 /**
  * Internal dependencies
  */
-import { sendChatMessage, sendNotTyping } from 'state/happychat/connection/actions';
-import { setCurrentMessage } from 'state/happychat/ui/actions';
+import { sendChatMessage, sendTyping, sendNotTyping } from 'state/happychat/connection/actions';
 import getCurrentMessage from 'state/happychat/selectors/get-happychat-current-message';
 import { canUserSendMessages } from 'state/happychat/selectors';
 import { when, forEach, compose, propEquals, call, prop } from './functional';
@@ -25,6 +24,14 @@ import scrollbleed from './scrollbleed';
 const returnPressed = propEquals( 'which', 13 );
 // helper function that calls prevents default on the DOM event
 const preventDefault = call( 'preventDefault' );
+
+const sendThrottledTyping = throttle(
+	( connection, message ) => {
+		sendTyping( message );
+	},
+	1000,
+	{ leading: true, trailing: false }
+);
 
 /*
  * Renders a textarea to be used to comopose a message for the chat.
@@ -38,7 +45,8 @@ export const Composer = createReactClass( {
 		message: PropTypes.string,
 		onFocus: PropTypes.func,
 		onSendChatMessage: PropTypes.func,
-		onUpdateChatMessage: PropTypes.func,
+		onSendTyping: PropTypes.func,
+		onSendNotTyping: PropTypes.func,
 		translate: PropTypes.func, // localize HOC
 	},
 
@@ -49,17 +57,17 @@ export const Composer = createReactClass( {
 			onFocus,
 			onSendChatMessage,
 			onSendNotTyping,
-			onUpdateChatMessage,
+			onSendTyping,
 			translate,
 		} = this.props;
 		const sendMessage = when(
 			() => ! isEmpty( message ),
 			() => {
 				onSendChatMessage( message );
-				onSendNotTyping( message );
+				onSendNotTyping();
 			}
 		);
-		const onChange = compose( prop( 'target.value' ), onUpdateChatMessage );
+		const onChange = compose( prop( 'target.value' ), onSendTyping );
 		const onKeyDown = when( returnPressed, forEach( preventDefault, sendMessage ) );
 		const composerClasses = classNames( 'happychat__composer', {
 			'is-disabled': disabled,
@@ -99,14 +107,14 @@ const mapState = state => ( {
 } );
 
 const mapDispatch = dispatch => ( {
-	onUpdateChatMessage( message ) {
-		dispatch( setCurrentMessage( message ) );
+	onSendTyping( message ) {
+		isEmpty( message ) ? sendNotTyping() : sendThrottledTyping( message );
 	},
 	onSendChatMessage( message ) {
 		dispatch( sendChatMessage( message ) );
 	},
-	onSendNotTyping( message ) {
-		dispatch( sendNotTyping( message ) );
+	onSendNotTyping() {
+		dispatch( sendNotTyping() );
 	},
 } );
 

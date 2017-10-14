@@ -22,15 +22,14 @@ import {
 import {
 	ANALYTICS_EVENT_RECORD,
 	HAPPYCHAT_BLUR,
-	HAPPYCHAT_IO_SEND_MESSAGE_MESSAGE,
 	HAPPYCHAT_IO_SEND_MESSAGE_EVENT,
 	HAPPYCHAT_IO_SEND_MESSAGE_LOG,
-	HAPPYCHAT_SET_CURRENT_MESSAGE,
+	HAPPYCHAT_IO_SEND_MESSAGE_MESSAGE,
 	HELP_CONTACT_FORM_SITE_SELECT,
 	ROUTE_SET,
 } from 'state/action-types';
 import { useSandbox } from 'test/helpers/use-sinon';
-import { sendTyping, sendNotTyping, sendPreferences } from 'state/happychat/connection/actions';
+import { sendPreferences } from 'state/happychat/connection/actions';
 import { getCurrentUserLocale } from 'state/current-user/selectors';
 import { getGroups } from 'state/happychat/selectors';
 
@@ -44,22 +43,6 @@ describe( 'middleware', () => {
 			};
 			middleware( connection )( { getState: noop } )( noop )( action );
 			expect( connection.emit ).to.have.been.calledWithMatch( action );
-		} );
-	} );
-
-	describe( 'HAPPYCHAT_SET_CURRENT_MESSAGE action', () => {
-		test( 'should send the connection a typing signal when a message is present', () => {
-			const action = { type: HAPPYCHAT_SET_CURRENT_MESSAGE, message: 'Hello world' };
-			const dispatch = spy();
-			middleware( noop )( { getState: noop, dispatch } )( noop )( action );
-			expect( dispatch ).to.have.been.calledWithMatch( sendTyping( action.message ) );
-		} );
-
-		test( 'should send the connection a notTyping signal when the message is blank', () => {
-			const action = { type: HAPPYCHAT_SET_CURRENT_MESSAGE, message: '' };
-			const dispatch = spy();
-			middleware( noop )( { getState: noop, dispatch } )( noop )( action );
-			expect( dispatch ).to.have.been.calledWithMatch( sendNotTyping() );
 		} );
 	} );
 
