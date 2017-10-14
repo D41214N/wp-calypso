@@ -166,7 +166,7 @@ export default function( connection = null ) {
 			case HAPPYCHAT_IO_SEND_MESSAGE_USERINFO:
 			case HAPPYCHAT_IO_SEND_PREFERENCES:
 			case HAPPYCHAT_IO_SEND_TYPING:
-				connection.emit( action );
+				connection.send( action );
 				break;
 
 			case HAPPYCHAT_IO_REQUEST_TRANSCRIPT:

@@ -14,7 +14,7 @@ import { localize } from 'i18n-calypso';
 /**
  * Internal dependencies
  */
-import { sendChatMessage, sendTyping, sendNotTyping } from 'state/happychat/connection/actions';
+import { sendMessage, sendTyping, sendNotTyping } from 'state/happychat/connection/actions';
 import getCurrentMessage from 'state/happychat/selectors/get-happychat-current-message';
 import { canUserSendMessages } from 'state/happychat/selectors';
 import { when, forEach, compose, propEquals, call, prop } from './functional';
@@ -44,7 +44,7 @@ export const Composer = createReactClass( {
 		disabled: PropTypes.bool,
 		message: PropTypes.string,
 		onFocus: PropTypes.func,
-		onSendChatMessage: PropTypes.func,
+		onSendMessage: PropTypes.func,
 		onSendTyping: PropTypes.func,
 		onSendNotTyping: PropTypes.func,
 		translate: PropTypes.func, // localize HOC
@@ -55,20 +55,20 @@ export const Composer = createReactClass( {
 			disabled,
 			message,
 			onFocus,
-			onSendChatMessage,
+			onSendMessage,
 			onSendNotTyping,
 			onSendTyping,
 			translate,
 		} = this.props;
-		const sendMessage = when(
+		const sendMsg = when(
 			() => ! isEmpty( message ),
 			() => {
-				onSendChatMessage( message );
+				onSendMessage( message );
 				onSendNotTyping();
 			}
 		);
 		const onChange = compose( prop( 'target.value' ), onSendTyping );
-		const onKeyDown = when( returnPressed, forEach( preventDefault, sendMessage ) );
+		const onKeyDown = when( returnPressed, forEach( preventDefault, sendMsg ) );
 		const composerClasses = classNames( 'happychat__composer', {
 			'is-disabled': disabled,
 		} );
@@ -110,11 +110,11 @@ const mapDispatch = dispatch => ( {
 	onSendTyping( message ) {
 		isEmpty( message ) ? sendNotTyping() : sendThrottledTyping( message );
 	},
-	onSendChatMessage( message ) {
-		dispatch( sendChatMessage( message ) );
-	},
 	onSendNotTyping() {
 		dispatch( sendNotTyping() );
+	},
+	onSendMessage( message ) {
+		dispatch( sendMessage( message ) );
 	},
 } );
 

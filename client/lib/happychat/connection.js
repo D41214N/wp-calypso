@@ -86,7 +86,7 @@ class Connection {
 	 * @param  { Object } action Redux action with {event, payload, error} props
 	 * @return { Object } A socket promise
 	 */
-	emit( action ) {
+	send( action ) {
 		return this.openSocket.then(
 			socket => socket.emit( action.event, action.payload ),
 			e => this.dispatch( receiveError( action.error || '' + e ) )

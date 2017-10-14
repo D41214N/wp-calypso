@@ -133,7 +133,7 @@ export const receiveError = error => ( { type: HAPPYCHAT_IO_RECEIVE_ERROR, error
  * @param  { Object } message Message to be sent
  * @return { Object } Action object
  */
-export const sendChatMessage = message => ( {
+export const sendMessage = message => ( {
 	type: HAPPYCHAT_IO_SEND_MESSAGE_MESSAGE,
 	event: 'message',
 	error: 'failed to send message',

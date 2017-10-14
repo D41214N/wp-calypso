@@ -38,11 +38,11 @@ describe( 'middleware', () => {
 		test( 'should send the message through the connection and send a notTyping signal', () => {
 			const action = { type: HAPPYCHAT_IO_SEND_MESSAGE_MESSAGE, message: 'Hello world' };
 			const connection = {
-				emit: spy(),
+				send: spy(),
 				notTyping: spy(),
 			};
 			middleware( connection )( { getState: noop } )( noop )( action );
-			expect( connection.emit ).to.have.been.calledWithMatch( action );
+			expect( connection.send ).to.have.been.calledWithMatch( action );
 		} );
 	} );
 
