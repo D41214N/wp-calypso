@@ -157,4 +157,19 @@ describe( 'connection', () => {
 			socket.emit( 'message', message );
 		} );
 	} );
+
+	it( 'should not bind socket upon config promise rejection', () => {
+		const config = Promise.reject();
+		const connection = buildConnection();
+		const dispatch = stub();
+		const openSocket = connection.init( dispatch, config );
+		// TODO improve how we test that init promise returned is rejected
+		openSocket
+			.then( () => {
+				expect( false ).to.be.true;
+			} )
+			.catch( () => {
+				expect( true ).to.be.true;
+			} );
+	} );
 } );
