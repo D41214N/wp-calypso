@@ -6,26 +6,19 @@
 import { expect } from 'chai';
 import deepFreeze from 'deep-freeze';
 import { noop } from 'lodash';
-import { spy, stub } from 'sinon';
+import { spy } from 'sinon';
 
 /**
  * Internal dependencies
  */
-import middleware, {
-	connectChat,
-	connectIfRecentlyActive,
-	sendActionLogsAndEvents,
-	sendAnalyticsLogEvent,
-} from '../middleware';
+import middleware, { sendActionLogsAndEvents, sendAnalyticsLogEvent } from '../middleware';
 import {
 	HAPPYCHAT_CHAT_STATUS_ASSIGNED,
 	HAPPYCHAT_CHAT_STATUS_DEFAULT,
 	HAPPYCHAT_CHAT_STATUS_PENDING,
 	HAPPYCHAT_CONNECTION_STATUS_UNINITIALIZED,
 	HAPPYCHAT_CONNECTION_STATUS_CONNECTED,
-	HAPPYCHAT_CONNECTION_STATUS_CONNECTING,
 } from '../constants';
-import wpcom from 'lib/wp';
 import {
 	ANALYTICS_EVENT_RECORD,
 	HAPPYCHAT_BLUR,
@@ -37,152 +30,11 @@ import {
 	ROUTE_SET,
 } from 'state/action-types';
 import { useSandbox } from 'test/helpers/use-sinon';
-import {
-	sendLog,
-	sendTyping,
-	sendNotTyping,
-	sendPreferences,
-} from 'state/happychat/connection/actions';
+import { sendTyping, sendNotTyping, sendPreferences } from 'state/happychat/connection/actions';
 import { getCurrentUserLocale } from 'state/current-user/selectors';
 import { getGroups } from 'state/happychat/selectors';
 
 describe( 'middleware', () => {
-	describe( 'HAPPYCHAT_CONNECT action', () => {
-		// TODO: Add tests for cases outside the happy path
-		let connection;
-		let dispatch, getState;
-		const uninitializedState = deepFreeze( {
-			currentUser: { id: 1, capabilities: {} },
-			happychat: { connection: { status: HAPPYCHAT_CONNECTION_STATUS_UNINITIALIZED } },
-			users: { items: { 1: {} } },
-			help: { selectedSiteId: 2647731 },
-			sites: {
-				items: {
-					2647731: {
-						ID: 2647731,
-						name: 'Manual Automattic Updates',
-					},
-				},
-			},
-			ui: {
-				section: {
-					name: 'reader',
-				},
-			},
-		} );
-
-		useSandbox( sandbox => {
-			connection = {
-				init: sandbox.stub().returns( Promise.resolve() ),
-			};
-			dispatch = sandbox.stub();
-			getState = sandbox.stub();
-			sandbox.stub( wpcom, 'request', ( args, callback ) => callback( null, {} ) );
-		} );
-
-		test( 'should not attempt to connect when Happychat has been initialized', () => {
-			const connectedState = {
-				happychat: { connection: { status: HAPPYCHAT_CONNECTION_STATUS_CONNECTED } },
-			};
-			const connectingState = {
-				happychat: { connection: { status: HAPPYCHAT_CONNECTION_STATUS_CONNECTING } },
-			};
-
-			return Promise.all( [
-				connectChat( connection, { dispatch, getState: getState.returns( connectedState ) } ),
-				connectChat( connection, { dispatch, getState: getState.returns( connectingState ) } ),
-			] ).then( () => expect( connection.init ).not.to.have.been.called );
-		} );
-
-		test( 'should attempt to connect when Happychat is uninitialized', () => {
-			getState.returns( uninitializedState );
-			return connectChat( connection, { dispatch, getState } ).then( () => {
-				expect( connection.init ).to.have.been.calledOnce;
-			} );
-		} );
-	} );
-
-	describe( 'HAPPYCHAT_INITIALIZE action', () => {
-		// TODO: This test is only complicated because connectIfRecentlyActive calls
-		// connectChat directly, and since both are in the same module we can't stub
-		// connectChat. So we need to build up all the objects to make connectChat execute
-		// without errors. It may be worth pulling each of these helpers out into their
-		// own modules, so that we can stub them and simplify our tests.
-		const recentlyActiveState = deepFreeze( {
-			currentUser: { id: 1, capabilities: {} },
-			happychat: {
-				connection: { status: HAPPYCHAT_CONNECTION_STATUS_UNINITIALIZED },
-				lastActivityTimestamp: Date.now(),
-			},
-			users: { items: { 1: {} } },
-			help: { selectedSiteId: 2647731 },
-			sites: {
-				items: {
-					2647731: {
-						ID: 2647731,
-						name: 'Manual Automattic Updates',
-					},
-				},
-			},
-			ui: {
-				section: {
-					name: 'reader',
-				},
-			},
-		} );
-		const storeRecentlyActive = {
-			dispatch: noop,
-			getState: stub().returns( recentlyActiveState ),
-		};
-
-		const notRecentlyActiveState = deepFreeze( {
-			currentUser: { id: 1, capabilities: {} },
-			happychat: {
-				connection: { status: HAPPYCHAT_CONNECTION_STATUS_UNINITIALIZED },
-				lastActivityTimestamp: null, // no record of last activity
-			},
-			users: { items: { 1: {} } },
-			help: { selectedSiteId: 2647731 },
-			sites: {
-				items: {
-					2647731: {
-						ID: 2647731,
-						name: 'Manual Automattic Updates',
-					},
-				},
-			},
-			ui: {
-				section: {
-					name: 'reader',
-				},
-			},
-		} );
-		const storeNotRecentlyActive = {
-			dispatch: noop,
-			getState: stub().returns( notRecentlyActiveState ),
-		};
-
-		let connection;
-		useSandbox( sandbox => {
-			connection = {
-				init: sandbox.stub().returns( Promise.resolve() ),
-			};
-			sandbox.stub( wpcom, 'request', ( args, callback ) => callback( null, {} ) );
-		} );
-
-		test( 'should connect the chat if user was recently connected', () => {
-			connectIfRecentlyActive( connection, storeRecentlyActive ).then( () => {
-				expect( connection.init ).to.have.been.called;
-			} );
-		} );
-
-		test( 'should not connect the chat if user was not recently connected', () => {
-			connectIfRecentlyActive( connection, storeNotRecentlyActive ).then( () => {
-				expect( connection.init ).to.not.have.been.called;
-			} );
-		} );
-	} );
-
 	describe( 'HAPPYCHAT_IO_SEND_MESSAGE_MESSAGE action', () => {
 		test( 'should send the message through the connection and send a notTyping signal', () => {
 			const action = { type: HAPPYCHAT_IO_SEND_MESSAGE_MESSAGE, message: 'Hello world' };

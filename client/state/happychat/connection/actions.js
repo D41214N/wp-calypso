@@ -10,8 +10,6 @@ import { v4 as uuid } from 'uuid';
  */
 import { HAPPYCHAT_MESSAGE_TYPES } from 'state/happychat/constants';
 import {
-	HAPPYCHAT_CONNECT,
-	HAPPYCHAT_INITIALIZE,
 	HAPPYCHAT_IO_INIT,
 	HAPPYCHAT_IO_RECEIVE_ACCEPT,
 	HAPPYCHAT_IO_RECEIVE_CONNECT,
@@ -33,16 +31,13 @@ import {
 	HAPPYCHAT_IO_SEND_TYPING,
 } from 'state/action-types';
 
-export const connectChat = () => ( { type: HAPPYCHAT_CONNECT } );
-
-export const initialize = () => ( { type: HAPPYCHAT_INITIALIZE } );
-
 /**
  * Returns an action object indicating that the connection is being stablished.
  *
+ * @param { Promise } config Promise that holds the connection configuration.
  * @return { Object } Action object
  */
-export const initConnection = () => ( { type: HAPPYCHAT_IO_INIT } );
+export const initConnection = config => ( { type: HAPPYCHAT_IO_INIT, config } );
 
 /**
  * Returns an action object for the connect event,

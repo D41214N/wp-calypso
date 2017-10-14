@@ -11,7 +11,6 @@ import { isString } from 'lodash';
  * Internal dependencies
  */
 import {
-	initConnection,
 	receiveAccept,
 	receiveConnect,
 	receiveDisconnect,
@@ -33,40 +32,52 @@ const buildConnection = socket =>
 		: socket; // If socket is not an url, use it directly. Useful for testing.
 
 class Connection {
-	init( url, dispatch, { signer_user_id, jwt, locale, groups, geoLocation } ) {
+	/**
+	 * Init the SockeIO connection (bind events, etc)
+	 *
+	 * @param  { Function } dispatch Redux dispatch function
+	 * @param  { Promise } config   Will give us the user info
+	 * @return { Promise }          Resolved promise (an opened socket) or rejected
+	 */
+	init( dispatch, config ) {
 		if ( this.openSocket ) {
 			debug( 'socket is already connected' );
 			return this.openSocket;
 		}
 		this.dispatch = dispatch;
-		dispatch( initConnection() );
 
-		const socket = buildConnection( url );
-		this.openSocket = new Promise( ( resolve, reject ) => {
-			socket
-				.once( 'connect', () => dispatch( receiveConnect() ) )
-				.on( 'token', handler => {
-					dispatch( receiveToken() );
-					handler( { signer_user_id, jwt, locale, groups } );
-				} )
-				.on( 'init', () => {
-					dispatch( receiveInit( { signer_user_id, locale, groups, geoLocation } ) );
-					dispatch( requestChatTranscript() );
-					resolve( socket );
-				} )
-				.on( 'unauthorized', () => {
-					socket.close();
-					dispatch( receiveUnauthorized( 'User is not authorized' ) );
-					reject( 'User is not authorized' );
-				} )
-				.on( 'disconnect', reason => dispatch( receiveDisconnect( reason ) ) )
-				.on( 'reconnecting', () => dispatch( receiveReconnecting() ) )
-				.on( 'status', status => dispatch( receiveStatus( status ) ) )
-				.on( 'accept', accept => dispatch( receiveAccept( accept ) ) )
-				.on( 'message', message => dispatch( receiveMessage( message ) ) );
+		// By not catching the config promise, we expose a better API to init:
+		// - either we return a resolve promise (the openSocket)
+		// - or a rejected promise
+		return config.then( ( { url, user: { signer_user_id, jwt, locale, groups, geoLocation } } ) => {
+			const socket = buildConnection( url );
+
+			this.openSocket = new Promise( ( resolve, reject ) => {
+				// TODO: reject this promise
+				socket
+					.once( 'connect', () => dispatch( receiveConnect() ) )
+					.on( 'token', handler => {
+						dispatch( receiveToken() );
+						handler( { signer_user_id, jwt, locale, groups } );
+					} )
+					.on( 'init', () => {
+						dispatch( receiveInit( { signer_user_id, locale, groups, geoLocation } ) );
+						dispatch( requestChatTranscript() );
+						resolve( socket );
+					} )
+					.on( 'unauthorized', () => {
+						socket.close();
+						dispatch( receiveUnauthorized( 'User is not authorized' ) );
+						reject( 'User is not authorized' );
+					} )
+					.on( 'disconnect', reason => dispatch( receiveDisconnect( reason ) ) )
+					.on( 'reconnecting', () => dispatch( receiveReconnecting() ) )
+					.on( 'status', status => dispatch( receiveStatus( status ) ) )
+					.on( 'accept', accept => dispatch( receiveAccept( accept ) ) )
+					.on( 'message', message => dispatch( receiveMessage( message ) ) );
+			} );
+			return this.openSocket;
 		} );
-
-		return this.openSocket;
 	}
 
 	/**

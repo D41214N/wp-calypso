@@ -7,12 +7,9 @@ import { has, isEmpty, noop, throttle } from 'lodash';
 /**
  * Internal dependencies
  */
-import config from 'config';
-import wpcom from 'lib/wp';
 import {
 	ANALYTICS_EVENT_RECORD,
-	HAPPYCHAT_CONNECT,
-	HAPPYCHAT_INITIALIZE,
+	HAPPYCHAT_IO_INIT,
 	HAPPYCHAT_IO_REQUEST_TRANSCRIPT,
 	HAPPYCHAT_IO_SEND_MESSAGE_EVENT,
 	HAPPYCHAT_IO_SEND_MESSAGE_LOG,
@@ -53,9 +50,6 @@ import isHappychatClientConnected from 'state/happychat/selectors/is-happychat-c
 import isHappychatConnectionUninitialized from 'state/happychat/selectors/is-happychat-connection-uninitialized';
 import wasHappychatRecentlyActive from 'state/happychat/selectors/was-happychat-recently-active';
 import { getCurrentUser, getCurrentUserLocale } from 'state/current-user/selectors';
-import { getHelpSelectedSite } from 'state/help/selectors';
-import debugFactory from 'debug';
-const debug = debugFactory( 'calypso:happychat:actions' );
 
 const sendThrottledTyping = throttle(
 	( dispatch, message ) => {
@@ -64,69 +58,6 @@ const sendThrottledTyping = throttle(
 	1000,
 	{ leading: true, trailing: false }
 );
-
-// Promise based interface for wpcom.request
-const request = ( ...args ) =>
-	new Promise( ( resolve, reject ) => {
-		wpcom.request( ...args, ( error, response ) => {
-			if ( error ) {
-				return reject( error );
-			}
-			resolve( response );
-		} );
-	} );
-
-const sign = payload =>
-	request( {
-		method: 'POST',
-		path: '/jwt/sign',
-		body: { payload: JSON.stringify( payload ) },
-	} );
-
-const startSession = () =>
-	request( {
-		method: 'POST',
-		path: '/happychat/session',
-	} );
-
-export const connectChat = ( connection, { getState, dispatch } ) => {
-	const state = getState();
-	if ( ! isHappychatConnectionUninitialized( state ) ) {
-		// If chat has already initialized, do nothing
-		return;
-	}
-
-	const url = config( 'happychat_url' );
-
-	const user = getCurrentUser( state );
-	const locale = getCurrentUserLocale( state );
-	let groups = getGroups( state );
-	const selectedSite = getHelpSelectedSite( state );
-	if ( selectedSite && selectedSite.ID ) {
-		groups = getGroups( state, selectedSite.ID );
-	}
-
-	const happychatUser = {
-		signer_user_id: user.ID,
-		locale,
-		groups,
-	};
-
-	return startSession()
-		.then( ( { session_id, geo_location } ) => {
-			happychatUser.geoLocation = geo_location;
-			return sign( { user, session_id } );
-		} )
-		.then( ( { jwt } ) => connection.init( url, dispatch, { jwt, ...happychatUser } ) )
-		.catch( e => debug( 'failed to start Happychat session', e, e.stack ) );
-};
-
-export const connectIfRecentlyActive = ( connection, store ) => {
-	if ( wasHappychatRecentlyActive( store.getState() ) ) {
-		return connectChat( connection, store );
-	}
-	return Promise.resolve(); // for testing purposes we need to return a promise
-};
 
 export const getEventMessageFromActionData = action => {
 	// Below we've stubbed in the actions we think we'll care about, so that we can
@@ -242,21 +173,8 @@ export default function( connection = null ) {
 		const state = store.getState();
 
 		switch ( action.type ) {
-			case HAPPYCHAT_CONNECT:
-				connectChat( connection, store );
-				break;
-
-			case HAPPYCHAT_INITIALIZE:
-				connectIfRecentlyActive( connection, store );
-				break;
-
-			// Converts Calypso action => SocketIO action
-			case HELP_CONTACT_FORM_SITE_SELECT:
-				isHappychatClientConnected( state )
-					? store.dispatch(
-							sendPreferences( getCurrentUserLocale( state ), getGroups( state, action.siteId ) )
-						)
-					: noop;
+			case HAPPYCHAT_IO_INIT:
+				connection.init( store.dispatch, action.config );
 				break;
 
 			case HAPPYCHAT_IO_SEND_MESSAGE_EVENT:
@@ -279,6 +197,14 @@ export default function( connection = null ) {
 					? store.dispatch( sendNotTyping() )
 					: sendThrottledTyping( store.dispatch, message );
 				break;
+
+			// Converts Calypso action => SocketIO action
+			case HELP_CONTACT_FORM_SITE_SELECT:
+				isHappychatClientConnected( state )
+					? store.dispatch(
+							sendPreferences( getCurrentUserLocale( state ), getGroups( state, action.siteId ) )
+						)
+					: noop;
 
 			// Converts Calypso action => SocketIO action
 			case ROUTE_SET:
