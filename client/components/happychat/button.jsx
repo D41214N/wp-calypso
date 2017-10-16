@@ -26,7 +26,7 @@ import { initConnection } from 'state/happychat/connection/actions';
 import { openChat } from 'state/happychat/ui/actions';
 import Button from 'components/button';
 
-class HappychatButton extends Component {
+export class HappychatButton extends Component {
 	static propTypes = {
 		allowMobileRedirect: PropTypes.bool,
 		borderless: PropTypes.bool,
