@@ -260,7 +260,7 @@ export const sendPreferences = ( locale, groups ) => ( {
  * @param { Object } result An object with {messages, timestamp} props
  * @return { Object } Action object
  */
-export const receiveChatTranscript = ( { messages, timestamp } ) => ( {
+export const receiveTranscript = ( { messages, timestamp } ) => ( {
 	type: HAPPYCHAT_IO_REQUEST_TRANSCRIPT_RECEIVE,
 	messages,
 	timestamp,
@@ -271,7 +271,7 @@ export const receiveChatTranscript = ( { messages, timestamp } ) => ( {
  *
  * @return { Object } Action object
  */
-export const receiveChatTranscriptTimeout = () => ( {
+export const receiveTranscriptTimeout = () => ( {
 	type: HAPPYCHAT_IO_REQUEST_TRANSCRIPT_TIMEOUT,
 } );
 
@@ -282,11 +282,11 @@ export const receiveChatTranscriptTimeout = () => ( {
  * @param { String } timestamp Latest transcript timestamp
  * @return { Object } Action object
  */
-export const requestChatTranscript = timestamp => ( {
+export const requestTranscript = timestamp => ( {
 	type: HAPPYCHAT_IO_REQUEST_TRANSCRIPT,
 	event: 'transcript',
 	error: 'failed to get transcript',
 	payload: timestamp,
-	callback: receiveChatTranscript,
-	callbackTimeout: receiveChatTranscriptTimeout,
+	callback: receiveTranscript,
+	callbackTimeout: receiveTranscriptTimeout,
 } );
