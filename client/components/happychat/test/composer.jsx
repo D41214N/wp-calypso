@@ -5,6 +5,7 @@
  */
 import React from 'react';
 import { shallow } from 'enzyme';
+import { noop } from 'lodash';
 
 /**
  * Internal dependencies
@@ -15,7 +16,7 @@ describe( '<Composer />', () => {
 	describe( 'onChange event ', () => {
 		test( 'should call onSendTyping property', () => {
 			const onSendTyping = jest.fn();
-			const wrapper = shallow( <Composer onSendTyping={ onSendTyping } /> );
+			const wrapper = shallow( <Composer translate={ noop } onSendTyping={ onSendTyping } /> );
 			wrapper.find( 'textarea' ).simulate( 'change', { target: { value: 'hey' } } );
 			expect( onSendTyping ).toHaveBeenCalled();
 		} );
@@ -30,6 +31,7 @@ describe( '<Composer />', () => {
 					message={ 'hey' }
 					onSendMessage={ onSendMessage }
 					onSendNotTyping={ onSendNotTyping }
+					translate={ noop }
 				/>
 			);
 			wrapper.find( 'textarea' ).simulate( 'keydown', { which: 13, preventDefault: () => {} } );
@@ -45,6 +47,7 @@ describe( '<Composer />', () => {
 					message={ '' }
 					onSendMessage={ onSendMessage }
 					onSendNotTyping={ onSendNotTyping }
+					translate={ noop }
 				/>
 			);
 			wrapper.find( 'textarea' ).simulate( 'keydown', { which: 13, preventDefault: () => {} } );

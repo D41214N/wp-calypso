@@ -1,43 +1,224 @@
 /** @format */
+
 /**
  * External dependencies
- *
- * @format
  */
-
-import { expect } from 'chai';
-import { stub } from 'sinon';
 import { EventEmitter } from 'events';
 
 /**
  * Internal dependencies
  */
 import {
-	HAPPYCHAT_IO_RECEIVE_ACCEPT,
-	HAPPYCHAT_IO_RECEIVE_DISCONNECT,
-	HAPPYCHAT_IO_RECEIVE_INIT,
-	HAPPYCHAT_IO_RECEIVE_MESSAGE,
-	HAPPYCHAT_IO_RECEIVE_RECONNECTING,
-	HAPPYCHAT_IO_RECEIVE_STATUS,
-	HAPPYCHAT_IO_REQUEST_TRANSCRIPT,
-} from 'state/action-types';
-
+	receiveAccept,
+	receiveConnect,
+	receiveDisconnect,
+	receiveError,
+	receiveInit,
+	receiveMessage,
+	receiveReconnecting,
+	receiveStatus,
+	receiveToken,
+	receiveTranscript,
+	receiveUnauthorized,
+	requestTranscript,
+	sendMessage,
+} from 'state/happychat/connection/actions';
 import buildConnection from '../connection';
 
 describe( 'connection', () => {
-	describe( 'should bind socket upon config promise resolution', () => {
+	describe( 'init', () => {
+		describe( 'should bind SockeIO events upon config promise resolution', () => {
+			const signer_user_id = 12;
+			const jwt = 'jwt';
+			const locale = 'locale';
+			const groups = 'groups';
+			const geoLocation = 'location';
+
+			let socket, dispatch, openSocket;
+			beforeEach( () => {
+				socket = new EventEmitter();
+				dispatch = jest.fn();
+				const connection = buildConnection();
+				const config = Promise.resolve( {
+					url: socket,
+					user: {
+						signer_user_id,
+						jwt,
+						locale,
+						groups,
+						geoLocation,
+					},
+				} );
+				openSocket = connection.init( dispatch, config );
+			} );
+
+			test( 'connect event', () => {
+				socket.emit( 'connect' );
+				expect( dispatch ).toHaveBeenCalledTimes( 1 );
+				expect( dispatch ).toHaveBeenCalledWith( receiveConnect() );
+			} );
+
+			test( 'token event', () => {
+				const callback = jest.fn();
+				socket.emit( 'token', callback );
+				expect( dispatch ).toHaveBeenCalledTimes( 1 );
+				expect( dispatch ).toHaveBeenCalledWith( receiveToken() );
+				expect( callback ).toHaveBeenCalledTimes( 1 );
+				expect( callback ).toHaveBeenCalledWith( { signer_user_id, jwt, locale, groups } );
+			} );
+
+			test( 'init event', () => {
+				socket.emit( 'init' );
+				expect( dispatch ).toHaveBeenCalledTimes( 2 );
+				expect( dispatch.mock.calls[ 0 ][ 0 ] ).toEqual(
+					receiveInit( { signer_user_id, locale, groups, geoLocation } )
+				);
+				expect( dispatch.mock.calls[ 1 ][ 0 ] ).toEqual( requestTranscript() );
+				return expect( openSocket ).resolves.toBe( socket );
+			} );
+
+			test( 'unauthorized event', () => {
+				socket.close = jest.fn();
+				socket.emit( 'unauthorized' );
+				expect( dispatch ).toHaveBeenCalledTimes( 1 );
+				expect( dispatch ).toHaveBeenCalledWith( receiveUnauthorized( 'User is not authorized' ) );
+				expect( socket.close ).toHaveBeenCalled();
+			} );
+
+			test( 'disconnect event', () => {
+				const error = 'testing reasons';
+				socket.emit( 'disconnect', error );
+				expect( dispatch ).toHaveBeenCalledTimes( 1 );
+				expect( dispatch ).toHaveBeenCalledWith( receiveDisconnect( error ) );
+			} );
+
+			test( 'reconnecting event', () => {
+				socket.emit( 'reconnecting' );
+				expect( dispatch ).toHaveBeenCalledTimes( 1 );
+				expect( dispatch ).toHaveBeenCalledWith( receiveReconnecting() );
+			} );
+
+			test( 'status event', () => {
+				const status = 'testing status';
+				socket.emit( 'status', status );
+				expect( dispatch ).toHaveBeenCalledTimes( 1 );
+				expect( dispatch ).toHaveBeenCalledWith( receiveStatus( status ) );
+			} );
+
+			test( 'accept event', () => {
+				const isAvailable = true;
+				socket.emit( 'accept', isAvailable );
+				expect( dispatch ).toHaveBeenCalledTimes( 1 );
+				expect( dispatch ).toHaveBeenCalledWith( receiveAccept( isAvailable ) );
+			} );
+
+			test( 'message event', () => {
+				const message = 'testing msg';
+				socket.emit( 'message', message );
+				expect( dispatch ).toHaveBeenCalledTimes( 1 );
+				expect( dispatch ).toHaveBeenCalledWith( receiveMessage( message ) );
+			} );
+		} );
+
+		describe( 'should not bind SocketIO events upon config promise rejection', () => {
+			let connection, socket, dispatch, openSocket;
+			const rejectMsg = 'no auth';
+			beforeEach( () => {
+				socket = new EventEmitter();
+				dispatch = jest.fn();
+				connection = buildConnection();
+				openSocket = connection.init( dispatch, Promise.reject( rejectMsg ) );
+			} );
+
+			test( 'openSocket Promise has been rejected', () => {
+				return expect( openSocket ).rejects.toBe( rejectMsg );
+			} );
+
+			test( 'connect event', () => {
+				socket.emit( 'connect' );
+				expect( dispatch ).toHaveBeenCalledTimes( 0 );
+				// catch the promise to avoid the UnhandledPromiseRejectionWarning
+				return expect( openSocket ).rejects.toBe( rejectMsg );
+			} );
+
+			test( 'token event', () => {
+				const callback = jest.fn();
+				socket.emit( 'token', callback );
+				expect( dispatch ).toHaveBeenCalledTimes( 0 );
+				expect( callback ).toHaveBeenCalledTimes( 0 );
+				// catch the promise to avoid the UnhandledPromiseRejectionWarning
+				return expect( openSocket ).rejects.toBe( rejectMsg );
+			} );
+
+			test( 'init event', () => {
+				socket.emit( 'init' );
+				expect( dispatch ).toHaveBeenCalledTimes( 0 );
+				// catch the promise to avoid the UnhandledPromiseRejectionWarning
+				return expect( openSocket ).rejects.toBe( rejectMsg );
+			} );
+
+			test( 'unauthorized event', () => {
+				socket.close = jest.fn();
+				socket.emit( 'unauthorized' );
+				expect( dispatch ).toHaveBeenCalledTimes( 0 );
+				// catch the promise to avoid the UnhandledPromiseRejectionWarning
+				return expect( openSocket ).rejects.toBe( rejectMsg );
+			} );
+
+			test( 'disconnect event', () => {
+				const error = 'testing reasons';
+				socket.emit( 'disconnect', error );
+				expect( dispatch ).toHaveBeenCalledTimes( 0 );
+				// catch the promise to avoid the UnhandledPromiseRejectionWarning
+				return expect( openSocket ).rejects.toBe( rejectMsg );
+			} );
+
+			test( 'reconnecting event', () => {
+				socket.emit( 'reconnecting' );
+				expect( dispatch ).toHaveBeenCalledTimes( 0 );
+				// catch the promise to avoid the UnhandledPromiseRejectionWarning
+				return expect( openSocket ).rejects.toBe( rejectMsg );
+			} );
+
+			test( 'status event', () => {
+				const status = 'testing status';
+				socket.emit( 'status', status );
+				expect( dispatch ).toHaveBeenCalledTimes( 0 );
+				// catch the promise to avoid the UnhandledPromiseRejectionWarning
+				return expect( openSocket ).rejects.toBe( rejectMsg );
+			} );
+
+			test( 'accept event', () => {
+				const isAvailable = true;
+				socket.emit( 'accept', isAvailable );
+				expect( dispatch ).toHaveBeenCalledTimes( 0 );
+				// catch the promise to avoid the UnhandledPromiseRejectionWarning
+				return expect( openSocket ).rejects.toBe( rejectMsg );
+			} );
+
+			test( 'message event', () => {
+				const message = 'testing msg';
+				socket.emit( 'message', message );
+				expect( dispatch ).toHaveBeenCalledTimes( 0 );
+				// catch the promise to avoid the UnhandledPromiseRejectionWarning
+				return expect( openSocket ).rejects.toBe( rejectMsg );
+			} );
+		} );
+	} );
+
+	describe( 'when auth promise chain is fulfilled', () => {
 		const signer_user_id = 12;
 		const jwt = 'jwt';
 		const locale = 'locale';
 		const groups = 'groups';
 		const geoLocation = 'location';
 
-		let openSocket, socket, dispatch;
+		let socket, dispatch, connection, config;
 		beforeEach( () => {
 			socket = new EventEmitter();
-			dispatch = stub();
-			const connection = buildConnection();
-			const config = Promise.resolve( {
+			dispatch = jest.fn();
+			connection = buildConnection();
+			config = Promise.resolve( {
 				url: socket,
 				user: {
 					signer_user_id,
@@ -47,129 +228,89 @@ describe( 'connection', () => {
 					geoLocation,
 				},
 			} );
-			openSocket = connection.init( dispatch, config );
+			connection.init( dispatch, config );
 		} );
 
-		it( 'connect event', done => {
-			openSocket.then( () => {
-				// TODO: implement when connect event is used
-				expect( true ).to.equal( true );
-				done(); // tell mocha the promise chain ended
+		test( 'connection.send should emit a SocketIO event', () => {
+			socket.emit( 'init' ); // resolve internal openSocket promise
+
+			socket.emit = jest.fn();
+			const action = sendMessage( 'my msg' );
+			return connection.send( action ).then( () => {
+				expect( socket.emit ).toHaveBeenCalledWith( action.event, action.payload );
 			} );
-			socket.emit( 'connect' );
-			socket.emit( 'init' ); // force openSocket promise to resolve
 		} );
 
-		it( 'token event', done => {
-			const callback = stub();
-			openSocket.then( () => {
-				expect( callback ).to.have.been.calledWithMatch( { signer_user_id, jwt, locale, groups } );
-				done(); // tell mocha the promise chain ended
-			} );
-			socket.emit( 'token', callback );
-			socket.emit( 'init' ); // force openSocket promise to resolve
-		} );
+		describe( 'connection.request should emit a SocketIO event', () => {
+			test( 'and dispatch callbackTimeout if socket did not respond', () => {
+				socket.emit( 'init' ); // resolve internal openSocket promise
 
-		it( 'init event', done => {
-			openSocket.then( () => {
-				expect( dispatch.getCall( 0 ) ).to.have.been.calledWithMatch( {
-					type: HAPPYCHAT_IO_RECEIVE_INIT,
-					user: { signer_user_id, locale, groups, geoLocation },
+				const action = requestTranscript( null );
+				socket.emit = jest.fn();
+				return connection.request( action, 100 ).catch( error => {
+					expect( socket.emit ).toHaveBeenCalled();
+					expect( socket.emit.mock.calls[ 0 ][ 0 ] ).toBe( action.event );
+					expect( socket.emit.mock.calls[ 0 ][ 1 ] ).toBe( action.payload );
+					expect( dispatch ).toHaveBeenCalledWith( action.callbackTimeout() );
+					expect( error.message ).toBe( 'timeout' );
 				} );
-				expect( dispatch.getCall( 1 ) ).to.have.been.calledWithMatch( {
-					type: HAPPYCHAT_IO_REQUEST_TRANSCRIPT,
-				} );
-				done(); // tell mocha the promise chain ended
 			} );
-			socket.emit( 'init' ); // force openSocket promise to resolve
-		} );
 
-		it( 'unauthorized event', done => {
-			socket.close = stub().returns( () => {} );
-			openSocket.then( () => {
-				expect( socket.close ).to.have.been.called;
-				done(); // tell mocha the promise chain ended
-			} );
-			socket.emit( 'init' ); // force openSocket promise to resolve
-			socket.emit( 'unauthorized' );
-		} );
+			test( 'and dispatch callback if socket responded successfully', () => {
+				socket.emit( 'init' ); // resolve internal openSocket promise
 
-		it( 'disconnect event', done => {
-			const error = 'testing reasons';
-			openSocket.then( () => {
-				expect( dispatch.getCall( 2 ) ).to.have.been.calledWithMatch( {
-					type: HAPPYCHAT_IO_RECEIVE_DISCONNECT,
-					error,
+				const action = requestTranscript( null );
+				socket.on( action.event, ( payload, callback ) => {
+					const result = {
+						messages: [ 'msg1', 'msg2' ],
+						timestamp: Date.now(),
+					};
+					callback( null, result ); // fake server responded ok
 				} );
-				done(); // tell mocha the promise chain ended
+				return connection.request( action, 100 ).then( result => {
+					expect( dispatch ).toHaveBeenCalledWith( receiveTranscript( result ) );
+				} );
 			} );
-			socket.emit( 'init' ); // force openSocket promise to resolve
-			socket.emit( 'disconnect', error );
-		} );
 
-		it( 'reconnecting event', done => {
-			openSocket.then( () => {
-				expect( dispatch.getCall( 2 ) ).to.have.been.calledWithMatch( {
-					type: HAPPYCHAT_IO_RECEIVE_RECONNECTING,
-				} );
-				done(); // tell mocha the promise chain ended
-			} );
-			socket.emit( 'init' ); // force openSocket promise to resolve
-			socket.emit( 'reconnecting' );
-		} );
+			test( 'and dispatch error if socket responded with error', () => {
+				socket.emit( 'init' ); // resolve internal openSocket promise
 
-		it( 'status event', done => {
-			const status = 'testing status';
-			openSocket.then( () => {
-				expect( dispatch.getCall( 2 ) ).to.have.been.calledWithMatch( {
-					type: HAPPYCHAT_IO_RECEIVE_STATUS,
-					status,
+				const action = requestTranscript( null );
+				socket.on( action.event, ( payload, callback ) => {
+					callback( 'no data', null ); // fake server responded with error
 				} );
-				done(); // tell mocha the promise chain ended
-			} );
-			socket.emit( 'init' ); // force openSocket promise to resolve
-			socket.emit( 'status', status );
-		} );
-
-		it( 'accept event', done => {
-			const isAvailable = true;
-			openSocket.then( () => {
-				expect( dispatch.getCall( 2 ) ).to.have.been.calledWithMatch( {
-					type: HAPPYCHAT_IO_RECEIVE_ACCEPT,
-					isAvailable,
+				return connection.request( action, 100 ).catch( error => {
+					expect( error.message ).toBe( 'no data' );
+					expect( dispatch ).toHaveBeenCalledWith( receiveError( action.error + error.message ) );
 				} );
-				done(); // tell mocha the promise chain ended
 			} );
-			socket.emit( 'init' ); // force openSocket promise to resolve
-			socket.emit( 'accept', isAvailable );
-		} );
-
-		it( 'message event', done => {
-			const message = 'testing msg';
-			openSocket.then( () => {
-				expect( dispatch.getCall( 2 ) ).to.have.been.calledWithMatch( {
-					type: HAPPYCHAT_IO_RECEIVE_MESSAGE,
-					message,
-				} );
-				done(); // tell mocha the promise chain ended
-			} );
-			socket.emit( 'init' ); // force openSocket promise to resolve
-			socket.emit( 'message', message );
 		} );
 	} );
 
-	it( 'should not bind socket upon config promise rejection', () => {
-		const config = Promise.reject();
-		const connection = buildConnection();
-		const dispatch = stub();
-		const openSocket = connection.init( dispatch, config );
-		// TODO improve how we test that init promise returned is rejected
-		openSocket
-			.then( () => {
-				expect( false ).to.be.true;
-			} )
-			.catch( () => {
-				expect( true ).to.be.true;
+	describe( 'when auth promise chain is rejected', () => {
+		let socket, dispatch, connection, config;
+		beforeEach( () => {
+			socket = new EventEmitter();
+			dispatch = jest.fn();
+			connection = buildConnection();
+			config = Promise.reject( 'no auth' );
+			connection.init( dispatch, config );
+		} );
+
+		test( 'connection.send should dispatch receiveError action', () => {
+			socket.emit = jest.fn();
+			const action = sendMessage( 'content' );
+			return connection.send( action ).catch( e => {
+				expect( dispatch ).toHaveBeenCalledWith( receiveError( action.error + ': ' + e ) );
 			} );
+		} );
+
+		test( 'connection.request should dispatch receiveError action', () => {
+			socket.emit = jest.fn();
+			const action = requestTranscript( null );
+			return connection.request( action, 100 ).catch( e => {
+				expect( dispatch ).toHaveBeenCalledWith( receiveError( action.error + ': ' + e ) );
+			} );
+		} );
 	} );
 } );
