@@ -116,7 +116,7 @@ export const sendAnalyticsLogEvent = ( dispatch, { meta: { analytics: analyticsM
 	} );
 };
 
-export const sendActionLogsAndEvents = ( { dispatch, getState }, action ) => {
+export const sendActionLogsAndEvents = ( { getState, dispatch }, action ) => {
 	const state = getState();
 
 	// If there's not an active Happychat session, do nothing
@@ -137,7 +137,7 @@ export const sendActionLogsAndEvents = ( { dispatch, getState }, action ) => {
 	}
 };
 
-export const getRouteSetMessage = ( state, action ) => {
+const getRouteSetMessage = ( state, action ) => {
 	const currentUser = getCurrentUser( state );
 	return `Looking at https://wordpress.com${ action.path }?support_user=${ currentUser.username }`;
 };
@@ -150,10 +150,10 @@ export default function( connection = null ) {
 	}
 
 	return store => next => action => {
+		const state = store.getState();
+
 		// Send any relevant log/event data from this action to Happychat
 		sendActionLogsAndEvents( store, action );
-
-		const state = store.getState();
 
 		switch ( action.type ) {
 			case HAPPYCHAT_IO_INIT:
@@ -170,7 +170,7 @@ export default function( connection = null ) {
 				break;
 
 			case HAPPYCHAT_IO_REQUEST_TRANSCRIPT:
-				connection.request( action, 10000 );
+				connection.request( action, action.timeout );
 				break;
 
 			// Converts Calypso action => SocketIO action

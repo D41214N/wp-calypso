@@ -282,11 +282,12 @@ export const receiveTranscriptTimeout = () => ( {
  * @param { String } timestamp Latest transcript timestamp
  * @return { Object } Action object
  */
-export const requestTranscript = timestamp => ( {
+export const requestTranscript = ( timestamp, timeout = 10000 ) => ( {
 	type: HAPPYCHAT_IO_REQUEST_TRANSCRIPT,
 	event: 'transcript',
 	error: 'failed to get transcript',
 	payload: timestamp,
+	timeout: timeout,
 	callback: receiveTranscript,
 	callbackTimeout: receiveTranscriptTimeout,
 } );

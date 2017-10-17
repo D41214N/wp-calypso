@@ -3,173 +3,229 @@
 /**
  * External dependencies
  */
-import { expect } from 'chai';
 import deepFreeze from 'deep-freeze';
-import { noop } from 'lodash';
-import { spy } from 'sinon';
 
 /**
  * Internal dependencies
  */
-import middleware, { sendActionLogsAndEvents, sendAnalyticsLogEvent } from '../middleware';
+import middleware, {
+	sendActionLogsAndEvents,
+	sendAnalyticsLogEvent,
+	getEventMessageFromTracksData,
+} from '../middleware';
+import {
+	initConnection,
+	requestTranscript,
+	sendEvent,
+	sendLog,
+	sendMessage,
+	sendUserInfo,
+	sendPreferences,
+	sendTyping,
+	sendNotTyping,
+} from 'state/happychat/connection/actions';
+import { selectSiteId } from 'state/help/actions';
+import { setRoute } from 'state/ui/actions';
+import { getCurrentUserLocale } from 'state/current-user/selectors';
+import { getGroups } from 'state/happychat/selectors';
 import {
 	HAPPYCHAT_CHAT_STATUS_ASSIGNED,
 	HAPPYCHAT_CHAT_STATUS_DEFAULT,
 	HAPPYCHAT_CHAT_STATUS_PENDING,
 	HAPPYCHAT_CONNECTION_STATUS_UNINITIALIZED,
 	HAPPYCHAT_CONNECTION_STATUS_CONNECTED,
+	HAPPYCHAT_CONNECTION_STATUS_DISCONNECTED,
 } from 'state/happychat/constants';
 import {
 	ANALYTICS_EVENT_RECORD,
 	HAPPYCHAT_BLUR,
 	HAPPYCHAT_IO_SEND_MESSAGE_EVENT,
 	HAPPYCHAT_IO_SEND_MESSAGE_LOG,
-	HAPPYCHAT_IO_SEND_MESSAGE_MESSAGE,
-	HELP_CONTACT_FORM_SITE_SELECT,
-	ROUTE_SET,
 } from 'state/action-types';
-import { useSandbox } from 'test/helpers/use-sinon';
-import { sendPreferences } from 'state/happychat/connection/actions';
-import { getCurrentUserLocale } from 'state/current-user/selectors';
-import { getGroups } from 'state/happychat/selectors';
 
 describe( 'middleware', () => {
-	describe( 'HAPPYCHAT_IO_SEND_MESSAGE_MESSAGE action', () => {
-		test( 'should send the message through the connection and send a notTyping signal', () => {
-			const action = { type: HAPPYCHAT_IO_SEND_MESSAGE_MESSAGE, message: 'Hello world' };
-			const connection = {
-				send: spy(),
-				notTyping: spy(),
-			};
-			middleware( connection )( { getState: noop } )( noop )( action );
-			expect( connection.send ).to.have.been.calledWithMatch( action );
-		} );
-	} );
-
-	describe( 'HELP_CONTACT_FORM_SITE_SELECT action', () => {
-		test( 'should send the locale and groups through the connection and send a preferences signal', () => {
-			const state = {
-				happychat: {
-					connection: { status: HAPPYCHAT_CONNECTION_STATUS_CONNECTED },
-				},
-				currentUser: {
-					locale: 'en',
-					capabilities: {},
-				},
-				sites: {
-					items: {
-						1: { ID: 1 },
-					},
-				},
-				ui: {
-					section: {
-						name: 'reader',
-					},
-				},
-			};
-			const action = {
-				type: HELP_CONTACT_FORM_SITE_SELECT,
-				siteId: 1,
-			};
-			const getState = () => state;
-			const dispatch = spy();
-			middleware( noop )( { getState, dispatch } )( noop )( action );
-			expect( dispatch ).to.have.been.calledWithMatch(
-				sendPreferences( getCurrentUserLocale( state ), getGroups( state, action.siteId ) )
-			);
-		} );
-
-		test( 'should not send the locale and groups if there is no happychat connection', () => {
-			const state = {
-				currentUser: {
-					locale: 'en',
-					capabilities: {},
-				},
-				sites: {
-					items: {
-						1: { ID: 1 },
-					},
-				},
-			};
-			const action = {
-				type: HELP_CONTACT_FORM_SITE_SELECT,
-				siteId: 1,
-			};
-			const getState = () => state;
-			const dispatch = spy();
-			middleware( noop )( { getState, dispatch } )( noop )( action );
-			expect( dispatch ).to.not.have.been.called;
-		} );
-	} );
-
-	describe( 'ROUTE_SET action', () => {
-		let dispatch;
-		const action = { type: ROUTE_SET, path: '/me' };
-		const state = {
-			currentUser: {
-				id: '2',
-			},
-			users: {
-				items: {
-					2: { username: 'Link' },
-				},
-			},
-			happychat: {
-				connection: {
-					status: HAPPYCHAT_CONNECTION_STATUS_CONNECTED,
-					isAvailable: true,
-				},
-				chat: { status: HAPPYCHAT_CHAT_STATUS_ASSIGNED },
-			},
+	let actionMiddleware, connection, store;
+	beforeEach( () => {
+		connection = {
+			init: jest.fn(),
+			send: jest.fn(),
+			request: jest.fn(),
 		};
 
-		beforeEach( () => {
-			dispatch = spy();
+		store = {
+			getState: jest.fn(),
+			dispatch: jest.fn(),
+		};
+
+		actionMiddleware = middleware( connection )( store )( jest.fn() );
+	} );
+
+	describe( 'connection.init actions are connected', () => {
+		test( 'HAPPYCHAT_IO_INIT', () => {
+			const action = initConnection( jest.fn() );
+			actionMiddleware( action );
+			expect( connection.init ).toHaveBeenCalledWith( store.dispatch, action.config );
+		} );
+	} );
+
+	describe( 'connection.send actions are connected', () => {
+		test( 'HAPPYCHAT_IO_SEND_MESSAGE_EVENT', () => {
+			const action = sendEvent( 'msg' );
+			actionMiddleware( action );
+			expect( connection.send ).toHaveBeenCalledWith( action );
 		} );
 
-		test( 'should sent the page URL the user is in', () => {
-			const getState = () => state;
-			middleware( noop )( { getState, dispatch } )( noop )( action );
-			expect( dispatch.getCall( 0 ).args[ 0 ].payload.text ).to.be.equals(
-				'Looking at https://wordpress.com/me?support_user=Link'
-			);
+		test( 'HAPPYCHAT_IO_SEND_MESSAGE_LOG', () => {
+			const action = sendLog( 'msg' );
+			actionMiddleware( action );
+			expect( connection.send ).toHaveBeenCalledWith( action );
 		} );
 
-		test( 'should not sent the page URL the user is in when client not connected', () => {
-			const getState = () =>
-				Object.assign( {}, state, {
-					happychat: { connection: { status: HAPPYCHAT_CONNECTION_STATUS_UNINITIALIZED } },
-				} );
-			middleware( noop )( { getState, dispatch } )( noop )( action );
-			expect( dispatch ).to.not.have.been.called;
+		test( 'HAPPYCHAT_IO_SEND_MESSAGE_MESSAGE', () => {
+			const action = sendMessage( 'msg' );
+			actionMiddleware( action );
+			expect( connection.send ).toHaveBeenCalledWith( action );
 		} );
 
-		test( 'should not sent the page URL the user is in when chat is not assigned', () => {
-			const getState = () =>
-				Object.assign( {}, state, {
-					happychat: { chat: { status: HAPPYCHAT_CHAT_STATUS_PENDING } },
-				} );
-			middleware( noop )( { getState, dispatch } )( noop )( action );
-			expect( dispatch ).to.not.have.been.called;
+		test( 'HAPPYCHAT_IO_SEND_MESSAGE_USERINFO', () => {
+			const action = sendUserInfo( { user: 'user' } );
+			actionMiddleware( action );
+			expect( connection.send ).toHaveBeenCalledWith( action );
+		} );
+
+		test( 'HAPPYCHAT_IO_SEND_MESSAGE_PREFERENCES', () => {
+			const action = sendPreferences( 'locale', [] );
+			actionMiddleware( action );
+			expect( connection.send ).toHaveBeenCalledWith( action );
+		} );
+
+		test( 'HAPPYCHAT_IO_SEND_MESSAGE_TYPING (sendTyping)', () => {
+			const action = sendTyping( 'msg' );
+			actionMiddleware( action );
+			expect( connection.send ).toHaveBeenCalledWith( action );
+		} );
+
+		test( 'HAPPYCHAT_IO_SEND_MESSAGE_TYPING (sendNotTyping)', () => {
+			const action = sendNotTyping( 'msg' );
+			actionMiddleware( action );
+			expect( connection.send ).toHaveBeenCalledWith( action );
+		} );
+	} );
+
+	describe( 'connection.request actions are connected', () => {
+		test( 'HAPPYCHAT_IO_REQUEST_TRANSCRIPT', () => {
+			const action = requestTranscript( 20, 30 );
+			actionMiddleware( action );
+			expect( connection.request ).toHaveBeenCalledWith( action, action.timeout );
+		} );
+	} );
+
+	describe( 'Calypso actions are converted to SocketIO actions', () => {
+		describe( 'HELP_CONTACT_FORM_SITE_SELECT', () => {
+			test( 'should dispatch a sendPreferences action if happychat client is connected', () => {
+				const state = {
+					happychat: {
+						connection: { status: HAPPYCHAT_CONNECTION_STATUS_CONNECTED },
+					},
+					currentUser: {
+						locale: 'en',
+						capabilities: {},
+					},
+					sites: {
+						items: {
+							1: { ID: 1 },
+						},
+					},
+					ui: {
+						section: {
+							name: 'reader',
+						},
+					},
+				};
+				store.getState.mockReturnValue( state );
+				const action = selectSiteId( state.sites.items[ 1 ].ID );
+				actionMiddleware( action );
+				expect( store.dispatch ).toHaveBeenCalledWith(
+					sendPreferences( getCurrentUserLocale( state ), getGroups( state, action.siteId ) )
+				);
+			} );
+
+			test( 'should not dispatch a sendPreferences action if there is no happychat connection', () => {
+				const state = {
+					currentUser: {
+						locale: 'en',
+						capabilities: {},
+					},
+					sites: {
+						items: {
+							1: { ID: 1 },
+						},
+					},
+				};
+				store.getState.mockReturnValue( state );
+				const action = selectSiteId( state.sites.items[ 1 ].ID );
+				actionMiddleware( action );
+				expect( store.dispatch ).not.toHaveBeenCalled();
+			} );
+		} );
+
+		describe( 'ROUTE_SET', () => {
+			const action = setRoute( '/me' );
+
+			let state;
+			beforeEach( () => {
+				state = {
+					currentUser: {
+						id: '2',
+					},
+					users: {
+						items: {
+							2: { username: 'Link' },
+						},
+					},
+					happychat: {
+						connection: {
+							status: HAPPYCHAT_CONNECTION_STATUS_CONNECTED,
+							isAvailable: true,
+						},
+						chat: { status: HAPPYCHAT_CHAT_STATUS_ASSIGNED },
+					},
+				};
+
+				store.getState.mockReturnValue( state );
+			} );
+
+			test( 'should dispatch a sendEvent action if client connected and chat assigned', () => {
+				actionMiddleware( action );
+				expect( store.dispatch.mock.calls[ 0 ][ 0 ].payload.text ).toBe(
+					'Looking at https://wordpress.com/me?support_user=Link'
+				);
+			} );
+
+			test( 'should not dispatch a sendEvent action if client is not connected', () => {
+				state.happychat.connection.status = HAPPYCHAT_CONNECTION_STATUS_DISCONNECTED;
+				actionMiddleware( action );
+				expect( store.dispatch ).not.toHaveBeenCalled();
+			} );
+
+			test( 'should not dispatch a sendEvent action if chat is not assigned', () => {
+				state.happychat.chat.status = HAPPYCHAT_CHAT_STATUS_PENDING;
+				actionMiddleware( action );
+				expect( store.dispatch ).not.toHaveBeenCalled();
+			} );
 		} );
 	} );
 
 	describe( '#sendAnalyticsLogEvent', () => {
-		let dispatch;
-
-		beforeEach( () => {
-			dispatch = spy();
-		} );
-
 		test( 'should ignore non-tracks analytics recordings', () => {
 			const analyticsMeta = [
 				{ type: ANALYTICS_EVENT_RECORD, payload: { service: 'ga' } },
 				{ type: ANALYTICS_EVENT_RECORD, payload: { service: 'fb' } },
 				{ type: ANALYTICS_EVENT_RECORD, payload: { service: 'adwords' } },
 			];
-			sendAnalyticsLogEvent( dispatch, { meta: { analytics: analyticsMeta } } );
+			sendAnalyticsLogEvent( store.dispatch, { meta: { analytics: analyticsMeta } } );
 
-			expect( dispatch ).not.to.have.been.called;
+			expect( store.dispatch ).not.toHaveBeenCalled();
 		} );
 
 		test( 'should send log events for all listed tracks events', () => {
@@ -179,11 +235,11 @@ describe( 'middleware', () => {
 				{ type: ANALYTICS_EVENT_RECORD, payload: { service: 'adwords' } },
 				{ type: ANALYTICS_EVENT_RECORD, payload: { service: 'tracks', name: 'def' } },
 			];
-			sendAnalyticsLogEvent( dispatch, { meta: { analytics: analyticsMeta } } );
+			sendAnalyticsLogEvent( store.dispatch, { meta: { analytics: analyticsMeta } } );
 
-			expect( dispatch.callCount ).to.equal( 2 );
-			expect( dispatch.getCall( 0 ).args[ 0 ].payload.text ).to.be.equals( 'abc' );
-			expect( dispatch.getCall( 1 ).args[ 0 ].payload.text ).to.be.equals( 'def' );
+			expect( store.dispatch ).toHaveBeenCalledTimes( 2 );
+			expect( store.dispatch.mock.calls[ 0 ][ 0 ].payload.text ).toBe( 'abc' );
+			expect( store.dispatch.mock.calls[ 1 ][ 0 ].payload.text ).toBe( 'def' );
 		} );
 
 		test( 'should only send a timeline event for whitelisted tracks events', () => {
@@ -203,15 +259,22 @@ describe( 'middleware', () => {
 				},
 				{ type: ANALYTICS_EVENT_RECORD, payload: { service: 'tracks', name: 'def' } },
 			];
-			sendAnalyticsLogEvent( dispatch, { meta: { analytics: analyticsMeta } } );
+			sendAnalyticsLogEvent( store.dispatch, { meta: { analytics: analyticsMeta } } );
 
-			expect( dispatch.callCount ).to.equal( 6 );
-			expect( dispatch.getCall( 0 ).args[ 0 ].type ).to.be.equal( HAPPYCHAT_IO_SEND_MESSAGE_EVENT );
-			expect( dispatch.getCall( 1 ).args[ 0 ].type ).to.be.equal( HAPPYCHAT_IO_SEND_MESSAGE_LOG );
-			expect( dispatch.getCall( 2 ).args[ 0 ].type ).to.be.equal( HAPPYCHAT_IO_SEND_MESSAGE_LOG );
-			expect( dispatch.getCall( 3 ).args[ 0 ].type ).to.be.equal( HAPPYCHAT_IO_SEND_MESSAGE_EVENT );
-			expect( dispatch.getCall( 4 ).args[ 0 ].type ).to.be.equal( HAPPYCHAT_IO_SEND_MESSAGE_LOG );
-			expect( dispatch.getCall( 5 ).args[ 0 ].type ).to.be.equal( HAPPYCHAT_IO_SEND_MESSAGE_LOG );
+			expect( store.dispatch.mock.calls[ 0 ][ 0 ].type ).toBe( HAPPYCHAT_IO_SEND_MESSAGE_EVENT );
+			expect( store.dispatch.mock.calls[ 1 ][ 0 ].type ).toBe( HAPPYCHAT_IO_SEND_MESSAGE_LOG );
+			expect( store.dispatch.mock.calls[ 2 ][ 0 ].type ).toBe( HAPPYCHAT_IO_SEND_MESSAGE_LOG );
+			expect( store.dispatch.mock.calls[ 3 ][ 0 ].type ).toBe( HAPPYCHAT_IO_SEND_MESSAGE_EVENT );
+			expect( store.dispatch.mock.calls[ 4 ][ 0 ].type ).toBe( HAPPYCHAT_IO_SEND_MESSAGE_LOG );
+			expect( store.dispatch.mock.calls[ 5 ][ 0 ].type ).toBe( HAPPYCHAT_IO_SEND_MESSAGE_LOG );
+
+			expect( store.dispatch ).toHaveBeenCalledTimes( 6 );
+			expect( store.dispatch.mock.calls[ 0 ][ 0 ].payload.text ).toBe(
+				getEventMessageFromTracksData( analyticsMeta[ 0 ].payload )
+			);
+			expect( store.dispatch.mock.calls[ 3 ][ 0 ].payload.text ).toBe(
+				getEventMessageFromTracksData( analyticsMeta[ 2 ].payload )
+			);
 		} );
 	} );
 
@@ -235,15 +298,6 @@ describe( 'middleware', () => {
 			},
 		} );
 
-		let dispatch, getState;
-		useSandbox( sandbox => {
-			getState = sandbox.stub();
-		} );
-		beforeEach( () => {
-			dispatch = spy();
-			getState.returns( assignedState );
-		} );
-
 		test( "should not send events if there's no Happychat connection", () => {
 			const action = {
 				type: HAPPYCHAT_BLUR,
@@ -253,10 +307,10 @@ describe( 'middleware', () => {
 					],
 				},
 			};
-			getState.returns( unconnectedState );
-			sendActionLogsAndEvents( { dispatch, getState }, action );
+			store.getState.mockReturnValue( unconnectedState );
+			sendActionLogsAndEvents( store, action );
 
-			expect( dispatch ).not.to.have.been.called;
+			expect( store.dispatch ).not.toHaveBeenCalled();
 		} );
 
 		test( 'should not send log events if the Happychat connection is unassigned', () => {
@@ -268,10 +322,10 @@ describe( 'middleware', () => {
 					],
 				},
 			};
-			getState.returns( unassignedState );
-			sendActionLogsAndEvents( { dispatch, getState }, action );
+			store.getState.mockReturnValue( unassignedState );
+			sendActionLogsAndEvents( store, action );
 
-			expect( dispatch ).not.to.have.been.called;
+			expect( store.dispatch ).not.toHaveBeenCalled();
 		} );
 
 		test( 'should send matching events when Happychat is connected and assigned', () => {
@@ -296,20 +350,20 @@ describe( 'middleware', () => {
 					],
 				},
 			};
-			getState.returns( assignedState );
-			sendActionLogsAndEvents( { dispatch, getState }, action );
+			store.getState.mockReturnValue( assignedState );
+			sendActionLogsAndEvents( store, action );
 
 			// All 4 analytics records will be sent to the "firehose" log
 			// The two whitelisted analytics events and the HAPPYCHAT_BLUR action itself
 			// will be sent as customer events
-			expect( dispatch.callCount ).to.equal( 7 );
-			expect( dispatch.getCall( 0 ).args[ 0 ].type ).to.be.equal( HAPPYCHAT_IO_SEND_MESSAGE_EVENT );
-			expect( dispatch.getCall( 1 ).args[ 0 ].type ).to.be.equal( HAPPYCHAT_IO_SEND_MESSAGE_LOG );
-			expect( dispatch.getCall( 2 ).args[ 0 ].type ).to.be.equal( HAPPYCHAT_IO_SEND_MESSAGE_LOG );
-			expect( dispatch.getCall( 3 ).args[ 0 ].type ).to.be.equal( HAPPYCHAT_IO_SEND_MESSAGE_EVENT );
-			expect( dispatch.getCall( 4 ).args[ 0 ].type ).to.be.equal( HAPPYCHAT_IO_SEND_MESSAGE_LOG );
-			expect( dispatch.getCall( 5 ).args[ 0 ].type ).to.be.equal( HAPPYCHAT_IO_SEND_MESSAGE_LOG );
-			expect( dispatch.getCall( 6 ).args[ 0 ].type ).to.be.equal( HAPPYCHAT_IO_SEND_MESSAGE_EVENT );
+			expect( store.dispatch ).toHaveBeenCalledTimes( 7 );
+			expect( store.dispatch.mock.calls[ 0 ][ 0 ].type ).toBe( HAPPYCHAT_IO_SEND_MESSAGE_EVENT );
+			expect( store.dispatch.mock.calls[ 1 ][ 0 ].type ).toBe( HAPPYCHAT_IO_SEND_MESSAGE_LOG );
+			expect( store.dispatch.mock.calls[ 2 ][ 0 ].type ).toBe( HAPPYCHAT_IO_SEND_MESSAGE_LOG );
+			expect( store.dispatch.mock.calls[ 3 ][ 0 ].type ).toBe( HAPPYCHAT_IO_SEND_MESSAGE_EVENT );
+			expect( store.dispatch.mock.calls[ 4 ][ 0 ].type ).toBe( HAPPYCHAT_IO_SEND_MESSAGE_LOG );
+			expect( store.dispatch.mock.calls[ 5 ][ 0 ].type ).toBe( HAPPYCHAT_IO_SEND_MESSAGE_LOG );
+			expect( store.dispatch.mock.calls[ 6 ][ 0 ].type ).toBe( HAPPYCHAT_IO_SEND_MESSAGE_EVENT );
 		} );
 	} );
 } );
