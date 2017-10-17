@@ -217,7 +217,7 @@ export function setupMiddlewares( currentUser, reduxStore ) {
 
 	const state = reduxStore.getState();
 	if ( wasHappychatRecentlyActive( state ) ) {
-		reduxStore.dispatch( initHappychatConnection( getHappychatConfig( state ) ) );
+		reduxStore.dispatch( initHappychatConnection( getHappychatConfig( state )() ) );
 	}
 
 	if ( config.isEnabled( 'keyboard-shortcuts' ) ) {

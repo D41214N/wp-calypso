@@ -33,7 +33,7 @@ const startSession = () =>
 		path: '/happychat/session',
 	} );
 
-export default state => {
+export default state => () => {
 	const url = config( 'happychat_url' );
 
 	const locale = getCurrentUserLocale( state );
