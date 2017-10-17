@@ -36,8 +36,8 @@ class Connection {
 	 *
 	 * @param  { Function } dispatch Redux dispatch function
 	 * @param  { Promise } config   Will give us the user info
-	 * @return { Promise } A promise to be resolved (returns the internal opened socket)
-	 *                   	 or rejected (by the config promise or the auth socket itself)
+	 * @return { Promise } Fulfilled (returns the opened socket)
+	 *                   	 or rejected (returns an error message)
 	 */
 	init( dispatch, config ) {
 		if ( this.openSocket ) {
@@ -87,6 +87,8 @@ class Connection {
 	 *                  	  payload: contents to be sent,
 	 *                  	  error: message to be shown should the event fails to be sent,
 	 *                  	}
+	 * @return { Promise } Fulfilled (returns nothing)
+	 *                     or rejected (returns an error message)
 	 */
 	send( action ) {
 		if ( ! this.openSocket ) {
@@ -118,6 +120,8 @@ class Connection {
 	 *                  		callbackTimeout: a Redux action creator,
 	 *                  	}
 	 * @param  { Number } timeout How long (in milliseconds) has the server to respond
+	 * @return { Promise } Fulfilled (returns the transcript response)
+	 *                     or rejected (returns an error message)
 	 */
 	request( action, timeout ) {
 		if ( ! this.openSocket ) {
