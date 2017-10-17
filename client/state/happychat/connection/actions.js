@@ -280,6 +280,9 @@ export const receiveTranscriptTimeout = () => ( {
  * to be send to happychat as a SocketIO event.
  *
  * @param { String } timestamp Latest transcript timestamp
+ * @param { Number } timeout The number of milliseconds to wait for server response.
+ *                 	 If it hasn't responded after the timeout, the connection library
+ *                 	 will dispatch the receiveTranscriptTimeout action.
  * @return { Object } Action object
  */
 export const requestTranscript = ( timestamp, timeout = 10000 ) => ( {
