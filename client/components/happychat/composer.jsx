@@ -26,8 +26,8 @@ const returnPressed = propEquals( 'which', 13 );
 const preventDefault = call( 'preventDefault' );
 
 const sendThrottledTyping = throttle(
-	( connection, message ) => {
-		sendTyping( message );
+	( dispatch, message ) => {
+		dispatch( sendTyping( message ) );
 	},
 	1000,
 	{ leading: true, trailing: false }
@@ -108,7 +108,7 @@ const mapState = state => ( {
 
 const mapDispatch = dispatch => ( {
 	onSendTyping( message ) {
-		isEmpty( message ) ? sendNotTyping() : sendThrottledTyping( message );
+		isEmpty( message ) ? dispatch( sendNotTyping() ) : sendThrottledTyping( dispatch, message );
 	},
 	onSendNotTyping() {
 		dispatch( sendNotTyping() );
