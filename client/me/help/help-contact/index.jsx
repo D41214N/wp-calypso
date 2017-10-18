@@ -146,7 +146,7 @@ class HelpContact extends React.Component {
 		this.props.openHappychat();
 		const { howCanWeHelp, howYouFeel, message, site } = contactForm;
 
-		this.props.sendUserInfo( getUserInfo( { site, howCanWeHelp, howYouFeel } ) );
+		this.props.sendUserInfo( this.props.onGetUserInfo( { site, howCanWeHelp, howYouFeel } ) );
 		this.props.sendHappychatMessage( message );
 		this.props.sendNotTyping( message );
 
@@ -751,7 +751,7 @@ export default connect(
 			currentUserLocale: getCurrentUserLocale( state ),
 			currentUser: getCurrentUser( state ),
 			hasAskedADirectlyQuestion: hasUserAskedADirectlyQuestion( state ),
-			getUserInfo: getUserInfo( state ),
+			onGetUserInfo: getUserInfo( state ),
 			isDirectlyFailed: isDirectlyFailed( state ),
 			isDirectlyReady: isDirectlyReady( state ),
 			isDirectlyUninitialized: isDirectlyUninitialized( state ),
