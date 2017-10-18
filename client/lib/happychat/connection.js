@@ -105,11 +105,15 @@ class Connection {
 	}
 
 	/**
+	 *
 	 * Given a Redux action and a timeout, emits a SocketIO event that request
-	 * some info to server as a Promise. Upon resolution of that request promise,
-	 * the action.callback will be dispatched (it should be a Redux action creator).
-	 * If server response takes more than timeout, the action.callbackTimeout
-	 * will be dispatched instead.
+	 * some info to the Happychat server.
+	 *
+	 * The request will dispatch an action upon:
+	 *
+	 * - socket callback was succesful: dispatch action.callback
+	 * - socket callback was unsucessful: dispatch receiveError
+	 * - socket callback didn't respond before timeout: dispatch action.callbackTimeout
 	 *
 	 * @param  { Object } action A Redux action with props
 	 *                  	{
@@ -129,25 +133,35 @@ class Connection {
 		}
 
 		return this.openSocket.then(
-			socket =>
-				Promise.race( [
+			socket => {
+				// config a promise race
+				const promiseRace = Promise.race( [
 					new Promise( ( resolve, reject ) => {
 						socket.emit( action.event, action.payload, ( e, result ) => {
 							if ( e ) {
-								this.dispatch( receiveError( action.error + e ) );
-								return reject( new Error( e ) );
+								return reject( new Error( e ) ); // socket promise resolution
 							}
-							this.dispatch( action.callback( result ) );
-							resolve( result );
+							return resolve( result ); // socket promise rejection
 						} );
 					} ),
 					new Promise( ( resolve, reject ) =>
 						setTimeout( () => {
-							reject( Error( 'timeout' ) );
-							this.dispatch( action.callbackTimeout() );
+							return reject( Error( 'timeout' ) ); // timeout promise rejection
 						}, timeout )
 					),
-				] ),
+				] );
+
+				// dispatch the result upon promise race resolution
+				promiseRace.then(
+					result => this.dispatch( action.callback( result ) ),
+					e =>
+						e.message === 'timeout'
+							? this.dispatch( action.callbackTimeout() )
+							: this.dispatch( receiveError( action.error + ': ' + e.message ) )
+				);
+
+				return promiseRace;
+			},
 			e => {
 				this.dispatch( receiveError( action.error + ': ' + e ) );
 				// so we can relay the error message, for testing purposes

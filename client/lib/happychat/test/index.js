@@ -281,7 +281,9 @@ describe( 'connection', () => {
 				} );
 				return connection.request( action, 100 ).catch( error => {
 					expect( error.message ).toBe( 'no data' );
-					expect( dispatch ).toHaveBeenCalledWith( receiveError( action.error + error.message ) );
+					expect( dispatch ).toHaveBeenCalledWith(
+						receiveError( action.error + ': ' + error.message )
+					);
 				} );
 			} );
 		} );
