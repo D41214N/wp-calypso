@@ -79,10 +79,14 @@ describe( 'connection', () => {
 
 			test( 'unauthorized event', () => {
 				socket.close = jest.fn();
+				openSocket.catch( () => {
+					expect( dispatch ).toHaveBeenCalledTimes( 1 );
+					expect( dispatch ).toHaveBeenCalledWith(
+						receiveUnauthorized( 'User is not authorized' )
+					);
+					expect( socket.close ).toHaveBeenCalled();
+				} );
 				socket.emit( 'unauthorized' );
-				expect( dispatch ).toHaveBeenCalledTimes( 1 );
-				expect( dispatch ).toHaveBeenCalledWith( receiveUnauthorized( 'User is not authorized' ) );
-				expect( socket.close ).toHaveBeenCalled();
 			} );
 
 			test( 'disconnect event', () => {
