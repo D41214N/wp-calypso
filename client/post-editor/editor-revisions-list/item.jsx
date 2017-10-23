@@ -37,30 +37,30 @@ class EditorRevisionsListItem extends PureComponent {
 						} ) }
 				</span>
 				<div className="editor-revisions-list__changes">
-					{ this.props.revision.changes.added > 0 && (
+					{ this.props.revision.summary.added > 0 && (
 						<span className="editor-revisions-list__additions">
 							{ this.props.translate( '%(changes)d word added', '%(changes)d words added', {
-								args: { changes: this.props.revision.changes.added },
-								count: this.props.revision.changes.added,
+								args: { changes: this.props.revision.summary.added },
+								count: this.props.revision.summary.added,
 							} ) }
 						</span>
 					) }
 
-					{ this.props.revision.changes.added > 0 &&
-						this.props.revision.changes.removed > 0 &&
+					{ this.props.revision.summary.added > 0 &&
+						this.props.revision.summary.removed > 0 &&
 						', ' }
 
-					{ this.props.revision.changes.removed > 0 && (
+					{ this.props.revision.summary.removed > 0 && (
 						<span className="editor-revisions-list__deletions">
 							{ this.props.translate( '%(changes)d word removed', '%(changes)d words removed', {
-								args: { changes: this.props.revision.changes.removed },
-								count: this.props.revision.changes.removed,
+								args: { changes: this.props.revision.summary.removed },
+								count: this.props.revision.summary.removed,
 							} ) }
 						</span>
 					) }
 
-					{ this.props.revision.changes.added === 0 &&
-					this.props.revision.changes.removed === 0 && (
+					{ this.props.revision.summary.added === 0 &&
+					this.props.revision.summary.removed === 0 && (
 						<span className="editor-revisions-list__minor-changes">
 							{ this.props.translate( 'minor changes' ) }
 						</span>

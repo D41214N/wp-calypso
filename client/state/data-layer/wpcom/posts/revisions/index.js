@@ -4,7 +4,18 @@
  * @format
  */
 
-import { flow, forEach, get, map, mapKeys, mapValues, omit, pick } from 'lodash';
+import {
+	flow,
+	forEach,
+	get,
+	map,
+	mapKeys,
+	mapValues,
+	omit,
+	pick,
+	omitBy,
+	isUndefined,
+} from 'lodash';
 
 /**
  * Internal dependencies
@@ -18,6 +29,11 @@ import {
 	receivePostRevisionsSuccess,
 	receivePostRevisionsFailure,
 } from 'state/posts/revisions/actions';
+
+const diffKey = ( key, obj1, obj2 ) =>
+	map( diffWords( get( obj1, key, '' ), get( obj2, key, '' ) ), change =>
+		omitBy( change, isUndefined )
+	);
 
 /**
  * Normalize a WP REST API Post Revisions resource for consumption in Calypso
@@ -78,9 +94,12 @@ export const receiveSuccess = ( { dispatch }, { siteId, postId }, revisions ) =>
 	const normalizedRevisions = map( revisions, normalizeRevision );
 
 	forEach( normalizedRevisions, ( revision, index ) => {
-		revision.changes = countDiffWords(
-			diffWords( get( normalizedRevisions, [ index + 1, 'content' ], '' ), revision.content )
-		);
+		const previousRevision = get( normalizedRevisions, index + 1, {} );
+		revision.changes = {
+			title: diffKey( 'title', previousRevision, revision ),
+			content: diffKey( 'content', previousRevision, revision ),
+		};
+		revision.summary = countDiffWords( revision.changes.title.concat( revision.changes.content ) );
 	} );
 
 	dispatch( receivePostRevisionsSuccess( siteId, postId ) );
