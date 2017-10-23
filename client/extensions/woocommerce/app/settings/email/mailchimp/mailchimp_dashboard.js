@@ -22,7 +22,8 @@ import QueryMailChimpSyncStatus from 'woocommerce/state/sites/settings/email/que
 import {
 	syncStatus,
 	mailChimpSettings,
-	isRequestingSettings
+	isRequestingSettings,
+	isSavingSettings,
 	} from 'woocommerce/state/sites/settings/email/selectors';
 import { submitMailChimpNewsletterSettings, requestResync } from 'woocommerce/state/sites/settings/email/actions.js';
 import { isSubmittingNewsletterSetting, newsletterSettingsSubmitError } from 'woocommerce/state/sites/settings/email/selectors';
@@ -107,7 +108,7 @@ SyncTab.propTypes = {
 	resync: PropTypes.func.isRequired,
 };
 
-const Settings = localize( ( { translate, settings, oldCheckbox, isSaving, onChange, onSave } ) => {
+const Settings = localize( ( { translate, settings, oldCheckbox, onChange } ) => {
 	const onCheckedStateChange = () => {
 		const currentValue = settings.mailchimp_checkbox_defaults;
 		const nextValue = currentValue === 'check' ? 'uncheck' : 'check';
@@ -168,15 +169,6 @@ const Settings = localize( ( { translate, settings, oldCheckbox, isSaving, onCha
 							<span>{ settings.newsletter_label }</span>
 						</FormLabel>}
 				</div>
-				<div className="mailchimp__dashboard-settings-save">
-					<Button
-						primary
-						onClick={ onSave }
-						busy={ isSaving }
-						disabled={ isSaving }>
-						{ translate( 'Save' ) }
-					</Button>
-				</div>
 			</span>
 		</div>
 	);
@@ -208,6 +200,9 @@ class MailChimpDashboard extends React.Component {
 			} else {
 				nextProps.successNotice( translate( 'Email settings saved.' ), { duration: 4000 } );
 			}
+		}
+		if ( ( false === this.props.saveSettingsRequest ) && nextProps.saveSettingsRequest ) {
+			this.onSave();
 		}
 	}
 
@@ -291,6 +286,7 @@ export default connect(
 		syncStatusData: syncStatus( state, siteId ),
 		isRequestingSettings: isRequestingSettings( state, siteId ),
 		isSaving: isSubmittingNewsletterSetting( state, siteId ),
+		saveSettingsRequest: isSavingSettings( state, siteId ),
 		newsletterSettingsSubmitError: newsletterSettingsSubmitError( state, siteId ),
 		settings: mailChimpSettings( state, siteId ),
 	} ),
