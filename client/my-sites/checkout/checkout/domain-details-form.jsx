@@ -57,6 +57,8 @@ import ExtraInfoForm, {
 import config from 'config';
 import GAppsFieldset from 'my-sites/domains/components/domain-form-fieldsets/g-apps-fieldset';
 import RegionAddressFieldsets from 'my-sites/domains/components/domain-form-fieldsets/region-address-fieldsets';
+import notices from 'notices';
+import support from 'lib/url/support';
 
 const debug = debugFactory( 'calypso:my-sites:upgrades:checkout:domain-details' );
 const wpcom = wp.undocumented(),
@@ -429,7 +431,28 @@ export class DomainDetailsForm extends PureComponent {
 	focusFirstError() {
 		const firstErrorName = kebabCase( head( formState.getInvalidFields( this.state.form ) ).name );
 		const firstErrorRef = this.inputRefs[ firstErrorName ] || this.refs[ firstErrorName ];
-		firstErrorRef.focus();
+
+		try {
+			firstErrorRef.focus();
+		} catch ( err ) {
+			const noticeMessage = this.props.translate(
+				'There was a problem validating your contact details: "%(firstErrorName)s" required. ' +
+					'Please try again or {{contactSupportLink}}contact support{{/contactSupportLink}}.',
+				{
+					args: {
+						firstErrorName,
+					},
+					components: {
+						contactSupportLink: <a href={ support.CALYPSO_CONTACT } />,
+					},
+					comment: 'Validation error when filling out domain checkout contact details form',
+				}
+			);
+			notices.error( noticeMessage );
+			throw new Error(
+				`Cannot focus() on invalid form element in domain details checkout form with name: '${ firstErrorName }'`
+			);
+		}
 	}
 
 	focusAddressField() {
