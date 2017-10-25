@@ -50,6 +50,12 @@ export default function() {
 		checkoutController.checkout
 	);
 
+	page(
+		'/checkout/:site/with-gsuite/:domain/:receiptId?',
+		controller.siteSelection,
+		checkoutController.gsuiteNudge
+	);
+
 	// Visting /checkout without a plan or product should be redirected to /plans
 	page( '/checkout', '/plans' );
 }

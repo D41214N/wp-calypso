@@ -5,7 +5,7 @@
  */
 
 import { connect } from 'react-redux';
-import { flatten, find, isEmpty, isEqual, reduce, startsWith } from 'lodash';
+import { flatten, filter, find, isEmpty, isEqual, reduce, startsWith } from 'lodash';
 import i18n, { localize } from 'i18n-calypso';
 import page from 'page';
 import PropTypes from 'prop-types';
@@ -49,6 +49,7 @@ import { recordApplePayStatus } from 'lib/apple-pay';
 import { requestSite } from 'state/sites/actions';
 import { isDomainOnlySite, getCurrentUserPaymentMethods } from 'state/selectors';
 import { getSelectedSite, getSelectedSiteId, getSelectedSiteSlug } from 'state/ui/selectors';
+import { canAddGoogleApps } from 'lib/domains';
 import { getDomainNameFromReceiptOrCart } from 'lib/domains/utils';
 import { fetchSitesAndUser } from 'lib/signup/step-actions';
 import { loadTrackingTool } from 'state/analytics/actions';
@@ -250,16 +251,29 @@ const Checkout = createReactClass( {
 				renewalItem.extra.purchaseDomain,
 				renewalItem.extra.purchaseId
 			);
-		} else if ( cartItems.hasFreeTrial( cart ) ) {
+		}
+
+		if ( cartItems.hasFreeTrial( cart ) ) {
 			return selectedSiteSlug
 				? `/plans/${ selectedSiteSlug }/thank-you`
 				: '/checkout/thank-you/plans';
-		} else if ( cart.create_new_blog ) {
+		}
+
+		if ( cart.create_new_blog ) {
 			return `/checkout/thank-you/no-site/${ receiptId }`;
 		}
 
 		if ( ! selectedSiteSlug ) {
 			return '/checkout/thank-you/features';
+		}
+
+		if ( ! cartItems.hasGoogleApps( cart ) && cartItems.hasDomainRegistration( cart ) ) {
+			const domainsForGsuite = filter( cartItems.getDomainRegistrations( cart ), ( { meta } ) =>
+				canAddGoogleApps( meta )
+			);
+			if ( domainsForGsuite.length ) {
+				return `/checkout/${ selectedSiteSlug }/with-gsuite/${ domainsForGsuite[ 0 ] }/${ receiptId }`;
+			}
 		}
 
 		return this.props.selectedFeature && isValidFeatureKey( this.props.selectedFeature )

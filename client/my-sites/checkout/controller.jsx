@@ -8,7 +8,7 @@ import i18n from 'i18n-calypso';
 import ReactDom from 'react-dom';
 import React from 'react';
 import { isEmpty } from 'lodash';
-import { Route } from 'page';
+import page, { Route } from 'page';
 
 /**
  * Internal Dependencies
@@ -18,8 +18,11 @@ import route from 'lib/route';
 import { setDocumentHeadTitle as setTitle } from 'state/document-head/actions';
 import { setSection } from 'state/ui/actions';
 import productsFactory from 'lib/products-list';
+import upgradesActions from 'lib/upgrades/actions';
 import { renderWithReduxStore } from 'lib/react-helpers';
+import { getSiteBySlug } from 'state/sites/selectors';
 import { getSelectedSite } from 'state/ui/selectors';
+import GsuiteNudge from 'my-sites/checkout/gsuite-nudge';
 
 /**
  * Module variables
@@ -128,6 +131,39 @@ export default {
 				domainOnlySiteFlow={ isEmpty( context.params.site ) }
 				selectedFeature={ context.params.feature }
 				selectedSite={ selectedSite }
+			/>,
+			document.getElementById( 'primary' ),
+			context.store
+		);
+
+		ReactDom.unmountComponentAtNode( document.getElementById( 'secondary' ) );
+	},
+
+	gsuiteNudge( context ) {
+		const { domain, site, receiptId } = context.params;
+		context.store.dispatch( setSection( { name: 'gsuite-nudge' }, { hasSidebar: false } ) );
+
+		const state = context.store.getState();
+		const selectedSite =
+			getSelectedSite( state ) || getSiteBySlug( state, site ) || getSiteBySlug( state, domain );
+
+		const handleAddGoogleApps = googleAppsCartItem => {
+			upgradesActions.addItem( googleAppsCartItem );
+			page( `/checkout/${ site }` );
+		};
+
+		const handleClickSkip = () => {
+			page( `/checkout/thank-you/${ site }/${ receiptId }` );
+		};
+
+		renderWithReduxStore(
+			<GsuiteNudge
+				domain={ domain }
+				productsList={ productsList }
+				receiptId={ Number( receiptId ) }
+				selectedSite={ selectedSite }
+				onAddGoogleApps={ handleAddGoogleApps }
+				onClickSkip={ handleClickSkip }
 			/>,
 			document.getElementById( 'primary' ),
 			context.store
