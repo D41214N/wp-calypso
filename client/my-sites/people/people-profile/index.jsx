@@ -77,8 +77,17 @@ class PeopleProfile extends React.PureComponent {
 		role = 'undefined' === typeof role ? this.getRole() : role;
 		return 'role-' + role;
 	};
-	
-	handleLinkToReaderSiteStream = () => recordTrack( 'calypso_reader_people_followers_link_click' );
+
+
+	handleLinkToReaderSiteStream = (event ) => {
+		const modifierPressed = event.button > 0 || event.metaKey || event.controlKey || event.shiftKey || event.altKey;
+		if( ! modifierPressed) {
+			event.preventDefault();
+		}
+		recordTrack( 'calypso_sites_people_followers_link_click',{
+			modifier_pressed: modifierPressed,
+		} )
+	};
 
 	renderName = () => {
 		const user = this.props.user;
