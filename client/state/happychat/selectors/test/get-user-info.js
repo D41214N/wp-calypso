@@ -73,6 +73,6 @@ describe( 'HAPPYCHAT_IO_SEND_MESSAGE_USERINFO action', () => {
 			howYouFeel: 'howYouFeel',
 		} );
 
-		expect( userInfo ).toMatchObject( expectedInfo );
+		expect( userInfo ).toEqual( expectedInfo );
 	} );
 } );

@@ -1,11 +1,6 @@
 /** @format */
 
 /**
- * External dependencies
- */
-import { expect } from 'chai';
-
-/**
  * Internal dependencies
  */
 import { lastActivityTimestamp } from '../reducer';
@@ -25,22 +20,22 @@ describe( 'reducers', () => {
 
 		test( 'defaults to null', () => {
 			const result = lastActivityTimestamp( undefined, {} );
-			expect( result ).to.be.null;
+			expect( result ).toBeNull();
 		} );
 
 		test( 'should update on certain activity-specific actions', () => {
 			let result;
 
 			result = lastActivityTimestamp( null, { type: HAPPYCHAT_IO_RECEIVE_MESSAGE } );
-			expect( result ).to.equal( NOW );
+			expect( result ).toBe( NOW );
 
 			result = lastActivityTimestamp( null, { type: HAPPYCHAT_IO_SEND_MESSAGE_MESSAGE } );
-			expect( result ).to.equal( NOW );
+			expect( result ).toBe( NOW );
 		} );
 
 		test( 'should not update on other actions', () => {
 			const result = lastActivityTimestamp( null, { type: HAPPYCHAT_IO_RECEIVE_INIT } );
-			expect( result ).to.equal( null );
+			expect( result ).toBeNull();
 		} );
 	} );
 } );
