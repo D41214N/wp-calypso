@@ -5,7 +5,7 @@
  */
 
 import { connect } from 'react-redux';
-import { flatten, filter, find, isEmpty, isEqual, reduce, startsWith } from 'lodash';
+import { flatten, filter, find, get, isEmpty, isEqual, reduce, startsWith } from 'lodash';
 import i18n, { localize } from 'i18n-calypso';
 import page from 'page';
 import PropTypes from 'prop-types';
@@ -267,12 +267,22 @@ const Checkout = createReactClass( {
 			return '/checkout/thank-you/features';
 		}
 
+		const gsuiteItems = cartItems.getGoogleApps( cart );
+		if ( gsuiteItems.length ) {
+			const domainReceiptId = get( gsuiteItems[ 0 ], 'extra.receipt_for_domain' );
+			if ( domainReceiptId ) {
+				return `/checkout/thank-you/${ selectedSiteSlug }/${ domainReceiptId }/with-gsuite/${ receiptId }`;
+			}
+		}
+
 		if ( ! cartItems.hasGoogleApps( cart ) && cartItems.hasDomainRegistration( cart ) ) {
 			const domainsForGsuite = filter( cartItems.getDomainRegistrations( cart ), ( { meta } ) =>
 				canAddGoogleApps( meta )
 			);
+
 			if ( domainsForGsuite.length ) {
-				return `/checkout/${ selectedSiteSlug }/with-gsuite/${ domainsForGsuite[ 0 ] }/${ receiptId }`;
+				return `/checkout/${ selectedSiteSlug }/with-gsuite/${ domainsForGsuite[ 0 ]
+					.meta }/${ receiptId }`;
 			}
 		}
 

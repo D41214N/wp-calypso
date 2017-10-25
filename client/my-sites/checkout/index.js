@@ -29,6 +29,12 @@ export default function() {
 	);
 
 	page(
+		'/checkout/thank-you/:site/:receiptId/with-gsuite/:gsuiteReceiptId',
+		controller.siteSelection,
+		checkoutController.checkoutThankYou
+	);
+
+	page(
 		'/checkout/features/:feature/:domain/:plan_name?',
 		controller.siteSelection,
 		checkoutController.checkout

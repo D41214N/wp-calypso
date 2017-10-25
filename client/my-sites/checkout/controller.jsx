@@ -112,7 +112,8 @@ export default {
 	checkoutThankYou: function( context ) {
 		const CheckoutThankYouComponent = require( './checkout-thank-you' ),
 			{ routePath, routeParams } = route.sectionifyWithRoutes( context.path, checkoutRoutes ),
-			receiptId = Number( context.params.receiptId );
+			receiptId = Number( context.params.receiptId ),
+			gsuiteReceiptId = Number( context.params.gsuiteReceiptId ) || 0;
 
 		analytics.pageView.record( routePath, 'Checkout Thank You', routeParams );
 
@@ -128,6 +129,7 @@ export default {
 			<CheckoutThankYouComponent
 				productsList={ productsList }
 				receiptId={ receiptId }
+				gsuiteReceiptId={ gsuiteReceiptId }
 				domainOnlySiteFlow={ isEmpty( context.params.site ) }
 				selectedFeature={ context.params.feature }
 				selectedSite={ selectedSite }
@@ -148,6 +150,11 @@ export default {
 			getSelectedSite( state ) || getSiteBySlug( state, site ) || getSiteBySlug( state, domain );
 
 		const handleAddGoogleApps = googleAppsCartItem => {
+			googleAppsCartItem.extra = {
+				...googleAppsCartItem.extra,
+				receipt_for_domain: receiptId,
+			};
+
 			upgradesActions.addItem( googleAppsCartItem );
 			page( `/checkout/${ site }` );
 		};

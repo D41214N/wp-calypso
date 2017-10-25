@@ -495,6 +495,17 @@ function domainRedemption( properties ) {
 	return domainItem( 'domain_redemption', properties.domain, properties.source );
 }
 
+/**
+ * Retrieves all the G Suite items in the specified shopping cart.
+ * Out-dated name Google Apps is still used here for consistency in naming.
+ *
+ * @param {Object} cart - cart as `CartValue` object
+ * @returns {Object[]} the list of the corresponding items in the shopping cart as `CartItemValue` objects
+ */
+function getGoogleApps( cart ) {
+	return filter( getAll( cart ), isGoogleApps );
+}
+
 function googleApps( properties ) {
 	const productSlug = properties.product_slug || 'gapps',
 		item = domainItem( productSlug, properties.meta ? properties.meta : properties.domain );
@@ -872,6 +883,7 @@ export default {
 	getDomainRegistrations,
 	getDomainRegistrationsWithoutPrivacy,
 	getDomainRegistrationTld,
+	getGoogleApps,
 	getIncludedDomain,
 	getItemForPlan,
 	getRenewalItemFromCartItem,
