@@ -35,6 +35,7 @@ describe( 'Plans', () => {
 	test( 'should render with a paid plan', () => {
 		const wrapper = render(
 			<PlansWrapper
+				hasPlan={ true }
 				selectedSite={ { ...SELECTED_SITE, plan: SITE_PLAN_PRO } }
 				sitePlans={ getSitePlans( PLAN_JETPACK_BUSINESS ) }
 			/>
@@ -49,6 +50,7 @@ describe( 'Plans', () => {
 		const redirect = ( wrapper.instance().redirect = jest.fn() );
 
 		wrapper.setProps( {
+			hasPlan: true,
 			selectedSite: { ...SELECTED_SITE, plan: SITE_PLAN_PRO },
 			sitePlans: getSitePlans( PLAN_JETPACK_BUSINESS ),
 		} );
@@ -64,6 +66,7 @@ describe( 'Plans', () => {
 		const wrapper = mount(
 			<PlansWrapper
 				goBackToWpAdmin={ goBackToWpAdmin }
+				hasPlan={ true }
 				isAutomatedTransfer={ true }
 				selectedSite={ {
 					...SELECTED_SITE,
