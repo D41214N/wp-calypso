@@ -17,7 +17,7 @@ import debugFactory from 'debug';
 import config from 'config';
 import { getSavedVariations } from 'lib/abtest'; // used by error logger
 import { initConnection as initHappychatConnection } from 'state/happychat/connection/actions';
-import { wasHappychatRecentlyActive } from 'state/happychat/selectors';
+import wasHappychatRecentlyActive from 'state/happychat/selectors/was-happychat-recently-active';
 import getHappychatConfig from 'state/happychat/selectors/get-happychat-config';
 import analytics from 'lib/analytics';
 import { setReduxStore as setReduxBridgeReduxStore } from 'lib/redux-bridge';
