@@ -74,9 +74,6 @@ const SyncTab = localize( ( { siteId, translate, syncState, resync } ) => {
 				} ) }
 			</div>
 			<span className="mailchimp__sync-status">{ store_syncing ? syncing() : synced() }</span>
-			<a className="mailchimp__resync-link" onClick={ onResyncClick }>
-				{ translate( 'Resync', { comment: 'to synchronize again' } ) }
-			</a>
 			<div>
 				{ translate( '{{span_info}}Products:{{/span_info}} {{span}}%(products)s{{/span}}', {
 					components: {
@@ -96,6 +93,9 @@ const SyncTab = localize( ( { siteId, translate, syncState, resync } ) => {
 						orders
 					}
 				} ) }
+				<a className="mailchimp__resync-link" onClick={ onResyncClick }>
+					{ translate( 'Resync', { comment: 'to synchronize again' } ) }
+				</a>
 			</div>
 		</div>
 	);
